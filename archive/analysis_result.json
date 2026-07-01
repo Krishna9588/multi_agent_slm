@@ -1,0 +1,129 @@
+{
+  "url": "https://www.yugabyte.com/integrations/",
+  "title": "Yugabyte Partner Integrations | Yugabyte",
+  "word_count": 916,
+  "analysis": {
+    "Page Classification": {
+      "page_type": "products",
+      "confidence": "high",
+      "reasoning": "The page lists various integrations, features, and products of the database service"
+    },
+    "Named Entity Recognition": {
+      "people": [],
+      "organizations": [
+        "Yugabyte",
+        "AWS",
+        "Google Cloud",
+        "Microsoft Azure"
+      ],
+      "locations": [
+        "65+ regions"
+      ],
+      "products": [
+        "YugabyteDB Aeon",
+        "pgvector Extension",
+        "Superset",
+        "Metabase",
+        "Apache Superset",
+        "Apache Hudi",
+        "Presto",
+        "Apache Atlas",
+        "Tableau",
+        "Power BI",
+        "Camunda",
+        "RabbitMQ",
+        "Hevo",
+        "Mirantis MKE Enterprise",
+        "Kubernetes",
+        "Docker",
+        "Helm Charts",
+        "OpenShift",
+        "YSQL Loader (pgloader)",
+        "PGmigrate",
+        "Retool",
+        "Budibase",
+        "Caspio",
+        "Superblocks",
+        "AtomicJar Testcontainers",
+        "JanusGraph",
+        "KairosDB",
+        "Nutatix AHV",
+        "Cohesity",
+        "Commvault",
+        "Delphix",
+        "HashiCorp Vault",
+        "WSO2 Identity Server",
+        "Terraform",
+        "Ansible",
+        "CloudFormation",
+        "Hibernate",
+        "Spring Data",
+        "YCQL (Cassandra-Compatible) Drivers",
+        "YugabyteDB Smart Drivers",
+        "Prisma",
+        "Liquibase",
+        "Flyway",
+        "Confluent",
+        "Debezium",
+        "Apache Flink",
+        "Beam",
+        "DBeaver",
+        "pgAdmin",
+        "DataGrip",
+        "TablePlus",
+        "SQL Workbench/J",
+        "Arctype",
+        "DbSchema",
+        "YugabyteDB Voyager Migration Suite"
+      ],
+      "technologies": [
+        "PostgreSQL Ecosystem",
+        "AI Toolkit",
+        "Apache Spark",
+        "Presto Distributed SQL query engine",
+        "Apache Atlas Data governance and metadata management",
+        "Apache Superset for AI",
+        "Metabase for AI",
+        "Apache Hudi Full support: incremental data processing",
+        "Apache Spark Full support: large-scale data processing",
+        "YugabyteDB’s rapidly growing ecosystem of integrations and solutions",
+        "YCQL (Cassandra-Compatible) Drivers",
+        "R2DBC Smart Driver",
+        "Reactive programming"
+      ]
+    },
+    "Topic Modeling": {
+      "primary_topic": "Distributed Database",
+      "secondary_topics": [
+        "PostgreSQL Compatibility",
+        "Cloud Native Applications",
+        "Data Management"
+      ],
+      "keywords": [
+        "YugabyteDB",
+        "Aeon",
+        "YCQL",
+        "Spring Data",
+        "Java Ecosystem",
+        "AI-Ready Architecture"
+      ],
+      "one_line_summary": "YugabyteDB is a distributed database that provides PostgreSQL compatibility, cloud native applications, and AI-ready architecture."
+    },
+    "Sentiment Analysis": {
+      "overall_sentiment": "positive",
+      "confidence": "high",
+      "tone": [
+        "technical",
+        "professional"
+      ],
+      "intent": "informational",
+      "key_phrases": [
+        "Ultra-Resilient Apps with Yugabyte Integrations",
+        "Build next-generation intelligent applications",
+        "Enterprise Ecosystem",
+        "PostgreSQL Compatibility",
+        "Free open source database"
+      ]
+    }
+  }
+}
