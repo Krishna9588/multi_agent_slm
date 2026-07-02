@@ -2,7 +2,7 @@
 
 A fully local, dynamic multi-agent system powered by `llama3.1:8b`. This system uses a ReAct orchestrator to automatically route tasks between multiple specialised agents (like web scrapers, link extractors, and NER extractors) — all running on your local machine without cloud API dependencies.
 
-## 🚀 Step-by-Step Setup
+## Step-by-Step Setup
 
 Follow these steps to get the project running.
 
@@ -51,7 +51,7 @@ python run.py --list-agents
 
 ---
 
-## 🛑 Project Structure & Strict Folder Rule
+## Project Structure & Strict Folder Rule
 
 We keep the root directory perfectly clean so it is always obvious what to run.
 
