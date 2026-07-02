@@ -14,7 +14,7 @@ Updated to reflect the full 5-pillar cloud-equivalency infrastructure.
                                 │
   ┌─────────────────────────────▼────────────────────────────────────┐
   │                      Orchestrator Agent                          │
-  │                       (orchestrator.py)                          │
+  │                       (core/orchestrator.py)                     │
   │                                                                  │
   │  ┌────────────────────────────────────────────────────────────┐  │
   │  │              Blackboard (memory/blackboard.py)             │  │
@@ -37,7 +37,7 @@ Updated to reflect the full 5-pillar cloud-equivalency infrastructure.
   │ ArXiv       ──► │ │ (content trim)  │ │ Pydantic schemas        │
   └────────┬────────┘ └────────┬────────┘ │ (agents/schemas.py)     │
            │                   │          └────────────┬────────────┘
-           └───────────────────┼──────────────────────┘
+           └───────────────────┼───────────────────────┘
                                │
                                ▼
                ┌───────────────────────────────┐
@@ -67,7 +67,7 @@ Updated to reflect the full 5-pillar cloud-equivalency infrastructure.
 | Content Boilerplate Remover | `agents/web_scraper.py` (trafilatura) | 3 — Content Trimmer |
 | Session Blackboard | `memory/blackboard.py` | 4 — State |
 | Long-Term Vector Memory | `memory/memory_store.py` (ChromaDB) | 4 — Memory |
-| HITL Confirmation Gate | `orchestrator.py` (HITL_TOOLS) | 5 — Human-in-Loop |
+| HITL Confirmation Gate | `core/orchestrator.py` (HITL_TOOLS) | 5 — Human-in-Loop |
 
 ## Query Routing Logic (search_agent)
 

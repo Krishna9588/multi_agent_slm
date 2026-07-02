@@ -28,7 +28,7 @@ import os
 from typing import Optional, Type
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from models import get_conversation_session, DEFAULT_MODEL
+from core.models import get_conversation_session, DEFAULT_MODEL
 
 # How many times to ask the model to fix its JSON before giving up
 _MAX_RETRIES = 3

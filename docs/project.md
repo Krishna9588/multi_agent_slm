@@ -10,24 +10,40 @@
 ```
 ollama/
 │
-├── main.py                      ← ConversationSession (memory client)
+├── run.py                       ← CLI entry point (Main file to run)
+├── requirements.txt             ← Dependencies
+├── README.md                    ← Setup instructions
+│
+├── core/                        ← Core engine
+│   ├── models.py                ← LLM initialization
+│   └── orchestrator.py          ← Dynamic LLM-driven ReAct orchestrator
 │
 ├── agents/                      ← One file = one agent (add new ones freely)
 │   ├── __init__.py              ← Auto-discovery registry (REGISTRY dict)
-│   ├── _base.py                 ← Shared LLM utilities (private, not an agent)
+│   ├── _base.py                 ← Shared LLM utilities
 │   ├── web_scraper.py           → def web_scraper(url)
 │   ├── link_extractor.py        → def link_extractor(url)
 │   ├── page_classifier.py       → def page_classifier(text)
 │   ├── ner_agent.py             → def ner_agent(text)
 │   ├── topic_modeling.py        → def topic_modeling(text)
-│   └── sentiment_analysis.py   → def sentiment_analysis(text)
+│   └── sentiment_analysis.py    → def sentiment_analysis(text)
 │
-├── orchestrator.py              ← Dynamic LLM-driven ReAct orchestrator
-├── run.py                       ← CLI entry point
-│
-├── main.py                      ← Original conversational chat client
-└── web_agents.py                ← Original monolithic agent script
+├── memory/                      ← Long-term and short-term state
+├── docs/                        ← Architecture and project documentation
+├── scripts/                     ← Utilities like health_check.py
+└── archive/                     ← Saved outputs and conversation history
 ```
+
+---
+
+## 🛑 Strict Folder Rule
+
+To keep the project clean and easy to navigate:
+**Never place new files in the root directory.**
+- If you write a new agent, it goes in `agents/`.
+- If you write a new script, it goes in `scripts/`.
+- If you write documentation, it goes in `docs/`.
+- If no relevant folder exists for your new file, **create a new folder** for it.
 
 ---
 
@@ -42,6 +58,9 @@ ollama pull llama3.1:8b
 
 # 3a. Interactive session
 python run.py
+
+# 3b. Interactive session (Premium Cloud Mode)
+python run.py --premium
 
 # 3b. One-shot task
 python run.py "Analyse https://proplusdata.co and find their services"
@@ -96,9 +115,13 @@ no imports, no registration files to update.
 User: "Crawl https://proplusdata.co and find their services and social media"
   │
   ▼
-Orchestrator sends to LLM:
-  "You have these tools: web_scraper, link_extractor, page_classifier,
-   ner_agent, topic_modeling, sentiment_analysis. Plan your steps."
+Orchestrator pre-processes the task using `_select_tools`:
+  "Which 3 tools are needed to solve this user task?"
+  (Selects: web_scraper, link_extractor, ner_agent)
+  │
+  ▼
+Orchestrator sends to main LLM:
+  "You have these tools: web_scraper, link_extractor, ner_agent. Plan your steps."
   │
   ▼ LLM responds:
   {"action": "call_tool", "tool": "web_scraper", "args": {"url": "https://proplusdata.co"}}
@@ -133,6 +156,8 @@ The LLM decides what to do at each step. **No hard-coded pipeline.**
 |------|----------|------|-------|--------|
 | `web_scraper.py` | `web_scraper(url)` | Python (no LLM) | URL | title, text, word_count |
 | `link_extractor.py` | `link_extractor(url)` | Python (no LLM) | URL | internal/external/social links |
+| `deep_research_agent.py` | `deep_research_agent(url)` | LLM | URL | Structured company profile |
+| `data_exporter_agent.py` | `data_exporter_agent(data_json, format)` | Python | JSON, format | File path to saved CSV/JSON/MD |
 | `page_classifier.py` | `page_classifier(text)` | LLM | plain text | page_type, confidence, reasoning |
 | `ner_agent.py` | `ner_agent(text)` | LLM | plain text | people, orgs, locations, products, technologies |
 | `topic_modeling.py` | `topic_modeling(text)` | LLM | plain text | primary_topic, secondary_topics, keywords, summary |

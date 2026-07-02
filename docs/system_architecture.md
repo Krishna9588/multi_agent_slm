@@ -42,8 +42,9 @@ The system currently uses a pure **ReAct (Reasoning + Acting)** pattern. As the 
 
 **The New Flow Design:**
 1. **User Request** → Enters the API.
-2. **Semantic Router (Fast Routing):** A lightweight embedding model classifies the intent. If the request is simple, it routes it directly to a specific agent. If complex, it goes to the Supervisor.
-3. **Supervisor Orchestrator:** The main reasoning engine (e.g., Gemini 2.5 Flash). It breaks the complex task into a DAG (Directed Acyclic Graph) of sub-tasks.
+2. **Dynamic Tool Selector (Pre-processing):** A lightweight prompt asks the model to pick only the 3-4 tools required for the task. This massively reduces cognitive load and prevents hallucination loops.
+3. **Semantic Router (Fast Routing):** A lightweight embedding model classifies the intent. If the request is simple, it routes it directly to a specific agent. If complex, it goes to the Supervisor.
+4. **Supervisor Orchestrator:** The main reasoning engine (e.g., Gemini 2.5 Flash via `--premium` or local Llama 3.1). It breaks the complex task into a DAG (Directed Acyclic Graph) of sub-tasks using only the injected tools.
 4. **Sub-Agents Execute:** The Supervisor delegates tasks to specialized agents (e.g., `web_scraper` → `ner_agent`).
 5. **Critique / Verification:** Before returning the final answer, a lightweight "Critic Agent" verifies the output against the original user prompt.
 

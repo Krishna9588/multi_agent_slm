@@ -25,7 +25,9 @@ load_dotenv()
 # ── Configuration ──────────────────────────────────────────────────────────────
 
 OLLAMA_BASE_URL = "http://localhost:11434"
-DEFAULT_MODEL   = "llama3.1:8b"
+DEFAULT_MODEL   = "gemma4:12b"
+# DEFAULT_MODEL   = "gemma4:latest"
+# DEFAULT_MODEL   = "llama3.1:8b"
 
 # List of known Ollama models
 OLLAMA_MODELS = [
@@ -57,6 +59,9 @@ class BaseConversationSession:
     def reset(self):
         raise NotImplementedError
 
+    def set_system_prompt(self, new_prompt: str):
+        raise NotImplementedError
+
 # ── Ollama Connector ───────────────────────────────────────────────────────────
 
 class OllamaSession(BaseConversationSession):
@@ -75,6 +80,15 @@ class OllamaSession(BaseConversationSession):
                 "role": "system",
                 "content": self.system_prompt,
             })
+
+    def set_system_prompt(self, new_prompt: str):
+        self.system_prompt = new_prompt
+        if self._messages and self._messages[0].get("role") == "system":
+            self._messages[0]["content"] = new_prompt
+        elif not self._messages:
+            self._messages.append({"role": "system", "content": new_prompt})
+        else:
+            self._messages.insert(0, {"role": "system", "content": new_prompt})
 
     def chat(self, user_message: str, *, stream: bool = False, format: Optional[str] = None) -> str:
         self._messages.append({"role": "user", "content": user_message})
@@ -156,9 +170,24 @@ class GeminiSession(BaseConversationSession):
             config=config
         )
 
-    def chat(self, user_message: str, *, stream: bool = False) -> str:
+    def set_system_prompt(self, new_prompt: str):
+        self.system_prompt = new_prompt
+
+    def chat(self, user_message: str, *, stream: bool = False, format: Optional[str] = None) -> str:
+        from google import genai
+        
+        config_kwargs = {}
+        if format == "json":
+            config_kwargs["response_mime_type"] = "application/json"
+        if self.system_prompt:
+            config_kwargs["system_instruction"] = self.system_prompt
+            
+        config = None
+        if config_kwargs:
+            config = genai.types.GenerateContentConfig(**config_kwargs)
+
         if stream:
-            response = self._chat_session.send_message_stream(user_message)
+            response = self._chat_session.send_message_stream(user_message, config=config)
             full_reply = ""
             for chunk in response:
                 print(chunk.text, end="", flush=True)
@@ -166,7 +195,7 @@ class GeminiSession(BaseConversationSession):
             print()
             return full_reply
         else:
-            response = self._chat_session.send_message(user_message)
+            response = self._chat_session.send_message(user_message, config=config)
             return response.text
 
 # ── Factory Function ───────────────────────────────────────────────────────────

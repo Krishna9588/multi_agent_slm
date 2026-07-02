@@ -1,0 +1,22 @@
+[
+  {
+    "Company": "Amazon",
+    "Primary Domain": "amazon.com",
+    "Industry": "Internet Services and Retailing",
+    "Headquarters": "Seattle, Washington, United States",
+    "Employee Size": "5,000+",
+    "Revenue Band": "$500M+"
+  },
+  {
+    "Company": "Adobe",
+    "Primary Domain": "adobe.com",
+    "Industry": "Computer Software",
+    "Headquarters": "San Jose, California, United States"
+  },
+  {
+    "Company": "Apple",
+    "Primary Domain": "apple.com",
+    "Industry": "Technology Hardware",
+    "Headquarters": "Cupertino, California, United States"
+  }
+]

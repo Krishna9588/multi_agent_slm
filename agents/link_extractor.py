@@ -18,7 +18,7 @@ DESCRIPTION = (
     "Fetches a URL and extracts all hyperlinks found on the page. "
     "Returns three categories: internal_links (same domain, useful for discovering sub-pages), "
     "external_links (other websites), and social_links (detected social media profiles). "
-    "Use this when you need to discover site structure or find social media accounts."
+    "CRITICAL: Use this tool whenever the user explicitly asks for 'links', 'URLs', 'sub-pages', or wants you to 'list all pages' on a website."
 )
 
 PARAMETERS = {

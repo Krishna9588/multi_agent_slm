@@ -1,0 +1,5 @@
+description,name
+Fetch structured search-engine result data,SERP API
+Extract structured content from a single URL,Extract API
+"Combine live search discovery, extraction, and LLM synthesis into one source-backed research workflow",Research API
+"Crawl a domain or bounded section, extract each page, and deliver structured output for downstream ingestion",Crawl API
