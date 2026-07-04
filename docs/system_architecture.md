@@ -23,16 +23,18 @@ Traditional agent frameworks are often overly rigid or excessively bloated. This
 To prevent the LLM from becoming confused, every agent must have a strictly defined boundary, persona, and output schema. 
 
 ### **Currently Implemented Agents**
-- `web_scraper`: The data gatherer (5-strategy cascading waterfall).
-- `ner_agent`: Entity extraction (Outputs structured JSON arrays).
-- `page_classifier`: Categorises web content.
-- `topic_modeling` & `sentiment_analysis`: NLP tasks.
+- `web_scraper`: The data gatherer (5-strategy cascading waterfall). Auto-detects anti-bot measures and hands off to `browser_agent`.
+- `browser_agent`: A Playwright-powered Set-of-Mark agent that interacts with dynamic pages using integer element IDs to eliminate CSS hallucination.
+- `auth_agent`: Securely logs into platforms (LinkedIn/GitHub) using .env credentials and saves session state for the browser agent.
+- `vision_agent`: Multimodal agent (`llama3.2-vision`) that solves CAPTCHAs and analyses UI screenshots.
+- `memory_agent`: Interfaces with a Vector Database (ChromaDB/FAISS) to actively store and recall scraped facts or user preferences.
+- `qa_agent`: A Critic agent that evaluates JSON output for hallucinations or missing fields before returning it to the user.
+- `code_executor_agent`: A secure Python execution sandbox running inside an isolated Docker container (`python:3.10-slim`).
+- `ner_agent`, `page_classifier`, `topic_modeling`, `sentiment_analysis`: Standard NLP processing agents.
 
 ### **Proposed New Agents & Connectors**
 1. **`research_agent`**: Has access to search engines (e.g., Tavily or DuckDuckGo API) to actively hunt for information across the web.
-2. **`data_analyst_agent`**: A sandbox environment where the LLM can write and execute Pandas/Python code to analyse CSVs or databases.
-3. **`memory_agent`**: Interfaces with a Vector Database to recall facts from past conversations.
-4. **`writer_agent`**: Specialises in taking raw JSON data from other agents and formatting it into human-readable reports, emails, or markdown.
+2. **`writer_agent`**: Specialises in taking raw JSON data from other agents and formatting it into human-readable reports, emails, or markdown.
 
 ---
 
@@ -40,13 +42,12 @@ To prevent the LLM from becoming confused, every agent must have a strictly defi
 
 The system currently uses a pure **ReAct (Reasoning + Acting)** pattern. As the system scales, relying solely on ReAct can lead to token limits and infinite loops. We will evolve the flow into a **Hierarchical Supervisor Network**.
 
-**The New Flow Design:**
+**The Flow Design (TransferToAgent Protocol):**
 1. **User Request** → Enters the API.
 2. **Dynamic Tool Selector (Pre-processing):** A lightweight prompt asks the model to pick only the 3-4 tools required for the task. This massively reduces cognitive load and prevents hallucination loops.
-3. **Semantic Router (Fast Routing):** A lightweight embedding model classifies the intent. If the request is simple, it routes it directly to a specific agent. If complex, it goes to the Supervisor.
-4. **Supervisor Orchestrator:** The main reasoning engine (e.g., Gemini 2.5 Flash via `--premium` or local Llama 3.1). It breaks the complex task into a DAG (Directed Acyclic Graph) of sub-tasks using only the injected tools.
-4. **Sub-Agents Execute:** The Supervisor delegates tasks to specialized agents (e.g., `web_scraper` → `ner_agent`).
-5. **Critique / Verification:** Before returning the final answer, a lightweight "Critic Agent" verifies the output against the original user prompt.
+3. **Supervisor Orchestrator:** The main reasoning engine (e.g., Gemini 2.5 Flash via `--premium` or local Llama 3.1). It breaks the complex task into a DAG (Directed Acyclic Graph) of sub-tasks.
+4. **Sub-Agent Execution (Swarm Router):** If the Supervisor assigns a complex, multi-step stateful task (like navigating Hacker News), the target agent returns a `TransferToAgent` signal. The Orchestrator instantly pauses its ReAct loop, boots up the Swarm Router for the sub-agent, and yields control.
+5. **Critique / Verification:** Before returning the final answer, the `qa_agent` (Critic) verifies the output against the original user prompt, forcing the Swarm to fix issues dynamically.
 
 *(Note: We can implement this complex routing using **LangGraph**, which is perfect for building cyclic and stateful multi-agent applications).*
 

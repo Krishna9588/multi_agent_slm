@@ -1,0 +1,118 @@
+{
+  "_meta": {
+    "description": "Curated catalog of Apify actors for the external_service_agent. The LLM picks the best match for the user's query.",
+    "last_updated": "2026-07-04",
+    "how_to_add": "Add a new entry with a unique key, actor_id from Apify Store, and an input_template matching the actor's expected input schema."
+  },
+  "actors": {
+    "linkedin_jobs": {
+      "actor_id": "hMvNSpz3JnHgl5jkh",
+      "name": "LinkedIn Jobs Scraper",
+      "platform": "apify",
+      "description": "Scrapes LinkedIn job listings. Accepts a job search URL or keyword. Returns job title, company, location, description, applicant count, and more.",
+      "use_when": "User wants to scrape LinkedIn job postings, job search results, or job listings.",
+      "input_template": {
+        "urls": ["<linkedin_jobs_url>"],
+        "maxItems": 10
+      },
+      "input_notes": "Pass LinkedIn job search URLs in 'urls' array. 'maxItems' controls how many jobs to fetch."
+    },
+    "linkedin_profiles": {
+      "actor_id": "2SyF0bVxmgGr8IVCZ",
+      "name": "LinkedIn Profile Scraper",
+      "platform": "apify",
+      "description": "Scrapes public LinkedIn profile data including name, headline, experience, education, skills.",
+      "use_when": "User wants to scrape LinkedIn profile pages or people search results.",
+      "input_template": {
+        "urls": ["<linkedin_profile_url>"],
+        "maxItems": 10
+      },
+      "input_notes": "Pass LinkedIn profile URLs or people search URLs."
+    },
+    "linkedin_company": {
+      "actor_id": "mFScAMisPHfOsVGzk",
+      "name": "LinkedIn Company Scraper",
+      "platform": "apify",
+      "description": "Scrapes LinkedIn company pages including about, employees count, specialties, and recent posts.",
+      "use_when": "User wants to scrape LinkedIn company pages or company data.",
+      "input_template": {
+        "urls": ["<linkedin_company_url>"],
+        "maxItems": 5
+      },
+      "input_notes": "Pass LinkedIn company page URLs."
+    },
+    "google_maps": {
+      "actor_id": "nwua9Gu5YrADL7ZDj",
+      "name": "Google Maps Scraper",
+      "platform": "apify",
+      "description": "Scrapes Google Maps business listings including name, address, rating, reviews, phone, website.",
+      "use_when": "User wants to scrape Google Maps, find local businesses, or get business reviews.",
+      "input_template": {
+        "searchStringsArray": ["<search_query>"],
+        "maxCrawledPlaces": 10,
+        "language": "en"
+      },
+      "input_notes": "Pass search queries in 'searchStringsArray'. Use 'maxCrawledPlaces' for count."
+    },
+    "google_search": {
+      "actor_id": "nFJndFXA5zjCTuudP",
+      "name": "Google Search Results Scraper",
+      "platform": "apify",
+      "description": "Scrapes Google search results for given queries. Returns titles, URLs, snippets.",
+      "use_when": "User wants to scrape Google search results or SERP data.",
+      "input_template": {
+        "queries": "<search_query>",
+        "maxPagesPerQuery": 1,
+        "resultsPerPage": 10
+      },
+      "input_notes": "Pass the search query as a string in 'queries'."
+    },
+    "instagram_posts": {
+      "actor_id": "shu8hvrXbJbY3Eb9W",
+      "name": "Instagram Scraper",
+      "platform": "apify",
+      "description": "Scrapes Instagram profiles, posts, hashtags, and locations.",
+      "use_when": "User wants to scrape Instagram posts, profiles, or hashtag data.",
+      "input_template": {
+        "directUrls": ["<instagram_url>"],
+        "resultsLimit": 10
+      },
+      "input_notes": "Pass Instagram URLs (profile, post, hashtag, or location) in 'directUrls'."
+    },
+    "twitter_scraper": {
+      "actor_id": "61RPP7dywgiy0JPD0",
+      "name": "Twitter/X Scraper",
+      "platform": "apify",
+      "description": "Scrapes tweets, user profiles, and search results from Twitter/X.",
+      "use_when": "User wants to scrape Twitter/X posts, profiles, or search results.",
+      "input_template": {
+        "searchTerms": ["<search_query>"],
+        "maxTweets": 10
+      },
+      "input_notes": "Pass search terms or usernames. Use 'maxTweets' for count limit."
+    },
+    "website_content_crawler": {
+      "actor_id": "aYG0l9s7dbB7j3gbS",
+      "name": "Website Content Crawler",
+      "platform": "apify",
+      "description": "General-purpose website crawler that extracts clean text content from any website, following links to sub-pages.",
+      "use_when": "User wants to deeply crawl any website that blocks normal scrapers, or needs JavaScript rendering in the cloud.",
+      "input_template": {
+        "startUrls": [{"url": "<website_url>"}],
+        "maxCrawlPages": 10
+      },
+      "input_notes": "Pass start URLs as objects with 'url' key. 'maxCrawlPages' limits depth."
+    },
+    "amazon_product": {
+      "actor_id": "junglee/amazon-crawler",
+      "name": "Amazon Product Scraper",
+      "platform": "apify",
+      "description": "Scrapes Amazon product listings, prices, reviews, and details.",
+      "use_when": "User wants to scrape Amazon products, prices, or reviews.",
+      "input_template": {
+        "productUrls": [{"url": "<amazon_product_url>"}]
+      },
+      "input_notes": "Pass Amazon product or search URLs."
+    }
+  }
+}

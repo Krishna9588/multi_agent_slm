@@ -18,6 +18,7 @@ from agents.web_scraper import web_scraper
 print("Test 3: Force parsel (XPath) strategy")
 r3 = web_scraper("https://www.python.org/about/", strategy="parsel")
 print(f"  strategy  : {r3['strategy']}")
+print(f"  attempts  : {r3['attempts']}")
 print(f"  word_count: {r3['word_count']}")
 print(f"  title     : {r3['title']}")
 print()
@@ -28,6 +29,7 @@ print(f"  strategy  : {r4['strategy']}")
 print(f"  word_count: {r4['word_count']}")
 print(f"  attempts  : {r4['attempts']}")
 print(f"  title     : {r4['title']}")
+
 print(f"  title     : {r4['text']}")
 print()
 

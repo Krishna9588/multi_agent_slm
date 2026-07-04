@@ -37,7 +37,7 @@ MAX_STEPS     = 20      # max ReAct iterations (prevents infinite loops)
 CONTEXT_LIMIT = 800     # max words of a tool result echoed back to the LLM
 
 # Pillar 5: Tools that require human confirmation before execution
-HITL_TOOLS = ["data_exporter_agent"]
+HITL_TOOLS = ["data_exporter_agent", "external_service_agent"]
 
 # ── System prompt builder ──────────────────────────────────────────────────────
 
@@ -73,6 +73,7 @@ STRICT RULES:
 3. TO FINISH: {{"action": "final_answer", "answer": "<your complete, detailed answer>"}}
 4. Re-use scraped text by passing {{"text": "$scraped_text"}} to text-analysis tools.
 5. DEEP RESEARCH: For multi-page profiling, you MUST use `deep_research_agent`. For exporting data, you MUST use `data_exporter_agent` and ask the user for permission first.
+6. INBOX FILES: Any files (audio, pdf, images) the user mentions without a specific path are located in the 'archive/inbox/' folder. Use 'file_system_agent' to find their exact paths.
 """
 
 def _simplify_prompt(user_task: str, model: str) -> str:
@@ -283,6 +284,24 @@ class Orchestrator:
 
                 try:
                     result = self._execute_tool(tool_name, args)
+                    
+                    # --- SWARM INTEGRATION ---
+                    if "transfer_to" in result:
+                        self._log(f"\n  [Swarm] 🔁 Transferring control to {result['transfer_to'].name}...")
+                        from core.swarm import run_swarm
+                        sub_agent_result = run_swarm(
+                            starting_agent=result['transfer_to'], 
+                            user_query=result.get('initial_instruction', 'Continue the task.'),
+                            max_turns=15
+                        )
+                        self._log(f"  [Swarm] ✅ Control returned to Orchestrator.")
+                        
+                        # Replace the tool result with whatever the Swarm sub-agent found
+                        # Strip out the transfer_to object so it doesn't break JSON serialization
+                        del result["transfer_to"]
+                        result["swarm_output"] = sub_agent_result
+                    # -------------------------
+                    
                     self._step_results.append({"tool": tool_name, "result": result})
                     
                     # Prevent context overflow: intercept huge outputs

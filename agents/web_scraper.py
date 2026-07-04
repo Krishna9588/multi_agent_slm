@@ -77,6 +77,9 @@ _JS_BLOCK_MARKERS = [
     "you need to enable javascript",
     "javascript is disabled",
     "this site requires javascript",
+    "just a moment",
+    "checking your browser before accessing",
+    "cloudflare",
 ]
 
 # ── Shared HTML → Text helpers ─────────────────────────────────────────────────
@@ -525,10 +528,10 @@ def web_scraper(
     }
 
     if winner is None:
-        result["error"] = (
-            "No strategy returned sufficient content (>= 150 words). "
-            "Returning best available result. "
-            + (f"Last error: {last_error}" if last_error else "")
-        )
+        # --- SWARM HANDOFF ---
+        # The site is likely a React SPA or blocking us with Cloudflare.
+        # Instead of failing, we instantly pass the torch to the Browser Agent!
+        from agents.browser_agent import browser_agent
+        return browser_agent(url)
 
     return result

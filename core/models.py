@@ -25,12 +25,14 @@ load_dotenv()
 # ── Configuration ──────────────────────────────────────────────────────────────
 
 OLLAMA_BASE_URL = "http://localhost:11434"
-DEFAULT_MODEL   = "gemma4:12b"
+DEFAULT_MODEL   = "gemma4:e2b-mlx"
 # DEFAULT_MODEL   = "gemma4:latest"
 # DEFAULT_MODEL   = "llama3.1:8b"
 
 # List of known Ollama models
 OLLAMA_MODELS = [
+    "llama3.2:3b"
+    "gemma4:e2b-mlx"
     "llama3.1:8b",
     "llama3:8b",
     "qwen3:4b",
@@ -144,13 +146,29 @@ class GeminiSession(BaseConversationSession):
     def __init__(self, model: str, system_prompt: Optional[str] = None):
         super().__init__(model, system_prompt)
         
+        # Discover all available GEMINI API keys
+        self.api_keys = []
+        for key, val in os.environ.items():
+            if key == "GEMINI_API_KEY" or key.startswith("GEMINI_API_KEY_"):
+                val = val.strip()
+                if val and val != "your_gemini_api_key_here":
+                    self.api_keys.append(val)
+                    
+        # Sort so that GEMINI_API_KEY comes first, then _1, _2, etc.
+        self.api_keys.sort(key=lambda k: 0 if k == os.environ.get("GEMINI_API_KEY") else 1)
+        
+        if not self.api_keys:
+            raise RuntimeError("No GEMINI_API_KEY found in environment.")
+            
+        self.current_key_idx = 0
+        
         try:
             from google import genai
-            self.client = genai.Client() # Automatically picks up GEMINI_API_KEY
+            self.client = genai.Client(api_key=self.api_keys[self.current_key_idx])
         except ImportError:
             raise ImportError("Please install google-genai: pip install google-genai")
         except Exception as e:
-            raise RuntimeError(f"Failed to initialize Gemini Client. Did you set GEMINI_API_KEY? Error: {e}")
+            raise RuntimeError(f"Failed to initialize Gemini Client. Error: {e}")
             
         self._chat_session = None
         self.reset()
@@ -186,17 +204,40 @@ class GeminiSession(BaseConversationSession):
         if config_kwargs:
             config = genai.types.GenerateContentConfig(**config_kwargs)
 
-        if stream:
-            response = self._chat_session.send_message_stream(user_message, config=config)
-            full_reply = ""
-            for chunk in response:
-                print(chunk.text, end="", flush=True)
-                full_reply += chunk.text
-            print()
-            return full_reply
-        else:
-            response = self._chat_session.send_message(user_message, config=config)
-            return response.text
+        # Retry logic for key rotation
+        last_error = None
+        for _ in range(len(self.api_keys)):
+            try:
+                if stream:
+                    response = self._chat_session.send_message_stream(user_message, config=config)
+                    full_reply = ""
+                    for chunk in response:
+                        print(chunk.text, end="", flush=True)
+                        full_reply += chunk.text
+                    print()
+                    return full_reply
+                else:
+                    response = self._chat_session.send_message(user_message, config=config)
+                    return response.text
+                    
+            except Exception as e:
+                last_error = e
+                print(f"\n  [Models] ⚠️ Gemini request failed: {e}")
+                
+                if len(self.api_keys) > 1:
+                    self.current_key_idx = (self.current_key_idx + 1) % len(self.api_keys)
+                    print(f"  [Models] 🔄 Rotating to next GEMINI_API_KEY (index {self.current_key_idx}) and retrying...")
+                    
+                    # Reinitialize client and chat session with new key
+                    self.client = genai.Client(api_key=self.api_keys[self.current_key_idx])
+                    # Need to recreate the chat session to use the new client
+                    # We lose context of previous turns in this exact object, but for 
+                    # one-shot tool calls and simple ReAct loops this is usually fine.
+                    self._chat_session = self.client.chats.create(model=self.model, config=config)
+                else:
+                    raise e
+                    
+        raise RuntimeError(f"All {len(self.api_keys)} GEMINI_API_KEY(s) failed. Last error: {last_error}")
 
 # ── Factory Function ───────────────────────────────────────────────────────────
 

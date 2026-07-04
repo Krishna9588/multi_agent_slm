@@ -2,6 +2,27 @@
 
 A fully local, dynamic multi-agent system powered by `llama3.1:8b`. This system uses a ReAct orchestrator to automatically route tasks between multiple specialised agents (like web scrapers, link extractors, and NER extractors) — all running on your local machine without cloud API dependencies.
 
+### The Autonomous Swarm Ecosystem
+The system has been transformed into a fully Autonomous Digital Worker with 10 specialized, highly integrated agents spanning 5 core capabilities:
+- **The System of Record:** `sql_db_agent.py` and `api_discovery_agent.py` for dynamic data fetching.
+- **The Communicator:** `email_agent.py`, `calendar_agent.py`, and `social_media_agent.py`.
+- **The Archivist:** `pdf_ocr_agent.py` and `audio_transcription_agent.py`.
+- **The Local Administrator:** `github_agent.py` and `file_system_agent.py` (with strict path-jails).
+- **The Optimizer:** `self_reflection_agent.py` which dynamically rewrites agent Python files based on failure logs.
+
+**For full details on LLM requirements and architecture**, see [docs/models_and_requirements.md](docs/models_and_requirements.md).
+
+## Usage
+
+### 1. The Interactive Testing Suite
+We built a dynamic testing utility to ensure all 10 agents are functioning safely.
+```bash
+python tests/test_agents.py
+```
+This interactive CLI will allow you to run tests against all agents or specific ones, simulating edge cases (e.g., path traversal attacks, double-booking meetings, database drops) and generating a final report.
+
+### 2. Standard Swarm Execution
+
 ## Step-by-Step Setup
 
 Follow these steps to get the project running.
@@ -13,10 +34,22 @@ Open a terminal and start the server:
 ollama serve
 ```
 
-### 2. Pull the Model
-In a separate terminal, pull the required model (this is a one-time download):
+### 2. System Requirements & Models
+This system uses a Multi-Agent Swarm architecture that delegates tasks to specialized models. You will need to install these models locally via Ollama (or use alternatives).
+
+> **📖 Full Guide:** Please read the [System Requirements & Model Selection Guide](docs/models_and_requirements.md) for a detailed breakdown of model comparisons, cloud fallbacks, and `.env` configuration.
+
+**Quick Start Required Models:**
+In a separate terminal, pull the required models:
 ```bash
+# 1. The Main Orchestrator (Reasoning & Routing)
 ollama pull llama3.1:8b
+
+# 2. The Browser & Swarm Sub-Agents (Fast, lightweight execution)
+ollama pull llama3.2:3b
+
+# 3. The Vision Agent (Multimodal CAPTCHA & UI analysis)
+ollama pull llama3.2-vision
 ```
 
 ### 3. Setup Python Environment
