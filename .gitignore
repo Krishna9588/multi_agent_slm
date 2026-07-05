@@ -1,1 +1,44 @@
+# ── Secrets & Credentials ──────────────────────────────────────────────────────
 .env
+.env.*
+
+# ── Encrypted Vault (session tokens, master keys) ─────────────────────────────
+archive/vault/
+archive/sessions/
+
+# ── Local Data (don't push user-specific data to remote) ──────────────────────
+archive/inbox/
+archive/outputs/
+archive/workspace/
+archive/github_repos/
+archive/results.json
+archive/chat_history
+
+# ── Database ───────────────────────────────────────────────────────────────────
+database.db
+*.db
+
+# ── Memory Store ───────────────────────────────────────────────────────────────
+memory/
+
+# ── Python ─────────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# ── IDE ────────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ── OS ─────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── External Data ──────────────────────────────────────────────────────────────
+external_data/

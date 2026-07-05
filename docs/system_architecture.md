@@ -76,7 +76,8 @@ To make this easily deployable on cloud providers (AWS, GCP, or Render), the arc
 - **Data Validation:** `pydantic` (V2) to enforce strict schema adherence for all JSON outputs.
 - **Observability:** `langsmith` and `langchain-core` for tracing.
 - **API Layer (Next Step):** Wrap `run.py` in a **FastAPI** server. Instead of just a CLI, the system will expose `/chat` and `/task` endpoints that stream Server-Sent Events (SSE) to a frontend.
-- **Containerization:** A `Dockerfile` and `docker-compose.yml` to spin up Ollama, the Vector DB, and the FastAPI server in one command.
+- **Containerization:** A `docker-compose.yml` that provides a local isolated `browserless/chrome` sandbox.
+- **Cloud Fallback (E2B):** If local Docker is unavailable, the system uses the `e2b` Python SDK to spin up a secure, ephemeral cloud sandbox for web navigation, protecting the host network.
 
 ---
 

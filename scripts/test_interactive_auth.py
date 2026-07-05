@@ -28,7 +28,7 @@ def run_test():
     browser = get_browser()
     # The browser_agent will automatically detect `github_session.json` and inject the cookies!
     browser.goto("https://github.com/")
-    
+
     # Let's extract the accessibility tree to see if it sees the logged-in dashboard
     dom = browser.get_dom()
     

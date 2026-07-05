@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AUTONOMOUS SWARM</title>
+<style>
+/* =========================================================
+   AUTONOMOUS SWARM — "Catalog 96" skin
+   Design system source: Dell December 1996 homepage (getdesign dell-1996)
+   Signature element: the ReAct "Thinking Panel" as a mail-order
+   catalog spread — each agent call is a ribbon-card row, tinted
+   by agent family, exactly like Dell's product-line rows.
+   ========================================================= */
+
+:root{
+  /* Brand & accent */
+  --primary: #e91d2a;
+  --yellow-sticker: #fcc20f;
+  --purple-stripe: #6a26a4;
+
+  /* Surface */
+  --frame-ink: #000000;
+  --canvas: #ffffff;
+
+  /* Text */
+  --ink: #000000;
+  --on-primary: #ffffff;
+  --link: #0000ee;
+
+  /* Ribbon tint family — assigned per agent "product line" */
+  --tint-olive: #8e8a25;
+  --tint-sage: #b3bd95;
+  --tint-salmon: #d77a7a;
+  --tint-peach: #e6915d;
+  --tint-lime: #c0d4a7;
+  --tint-sky: #9ab6c8;
+  --tint-steel: #a5b8c0;
+  --tint-periwinkle: #8c9ae0;
+
+  /* Type */
+  --font-display: "Arial Black", Arial, Helvetica, sans-serif;
+  --font-ui: Helvetica, Arial, sans-serif;
+  --font-body: "Times New Roman", Times, serif;
+
+  /* Spacing */
+  --xxs: 2px; --xs: 4px; --s: 6px; --sm: 8px; --m: 10px; --md: 12px;
+  --lg: 16px; --xl: 20px; --xxl: 24px; --sec-sm: 32px; --sec: 40px;
+}
+
+*{ box-sizing: border-box; }
+
+body{
+  margin:0;
+  background: #d9d9d9;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+}
+
+/* ---------- page frame ---------- */
+.page-frame{
+  background: var(--frame-ink);
+  padding: 8px;
+  max-width: 1180px;
+  margin: 16px auto;
+}
+.page-inner{
+  background: var(--canvas);
+  border: 1px solid var(--frame-ink);
+  display: flex;
+  min-height: 720px;
+}
+
+/* ---------- top banner ---------- */
+.top-banner{
+  background: var(--frame-ink);
+  color: var(--canvas);
+  padding: 12px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 16px;
+  grid-column: 1 / -1;
+}
+.top-banner .headline{
+  font-family: var(--font-ui);
+  font-weight:700;
+  font-size:16px;
+  letter-spacing:0.3px;
+  text-transform: uppercase;
+  line-height:1.2;
+}
+.top-banner .headline small{
+  display:block;
+  font-family: var(--font-body);
+  font-weight:400;
+  text-transform:none;
+  font-size:11px;
+  color:#cfcfcf;
+  margin-top:2px;
+}
+.banner-right{ display:flex; align-items:center; gap:14px; }
+
+.phone-callout{
+  background: var(--frame-ink);
+  color: var(--primary);
+  font-family: var(--font-ui);
+  font-weight:700;
+  font-size:13px;
+  padding:4px 8px;
+  white-space:nowrap;
+}
+.phone-callout::before{ content:"● "; }
+
+.buy-sticker{
+  background: var(--yellow-sticker);
+  color: var(--ink);
+  border:1px solid var(--frame-ink);
+  font-family: var(--font-ui);
+  font-weight:700;
+  font-size:12px;
+  padding:6px 12px;
+  cursor:pointer;
+  filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.6));
+  text-transform:uppercase;
+}
+.buy-sticker span{ color: var(--purple-stripe); }
+
+/* ---------- app shell ---------- */
+.app-shell{ display:flex; width:100%; }
+
+/* ---------- sidebar (icon-label-nav, rotated vertical) ---------- */
+.sidebar{
+  width: 168px;
+  min-width:168px;
+  background: var(--canvas);
+  border-right: 1px solid var(--frame-ink);
+  padding: var(--lg) 0;
+}
+.side-item{
+  display:flex; align-items:center; gap:10px;
+  padding: 8px 16px;
+  font-family: var(--font-ui);
+  font-weight:700;
+  font-size:12px;
+  text-transform:uppercase;
+  color: var(--ink);
+  cursor:pointer;
+  border-left: 4px solid transparent;
+}
+.side-item .glyph{
+  width:18px;height:18px;
+  border:1px solid var(--frame-ink);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;
+  background: var(--canvas);
+  flex:none;
+}
+.side-item.active{
+  border-left: 4px solid var(--primary);
+  background: #f2f2f2;
+}
+.side-item:hover{ background:#f2f2f2; }
+.side-divider{ height:1px; background: var(--frame-ink); opacity:0.15; margin: 10px 16px; }
+.side-status{
+  margin-top:auto;
+  padding: 12px 16px;
+  font-family: var(--font-ui);
+  font-size:11px;
+  color:#444;
+}
+.dot{ display:inline-block; width:7px; height:7px; border-radius:9999px; margin-right:5px; }
+.dot.on{ background:#1a7a2e; }
+.dot.off{ background:#a3a3a3; }
+
+/* ---------- main content ---------- */
+.main{
+  flex:1;
+  min-width:0;
+  padding: var(--xxl);
+  overflow:auto;
+}
+.screen{ display:none; }
+.screen.active{ display:block; }
+
+.section-eyebrow{
+  font-family: var(--font-display);
+  font-weight:900;
+  font-size:28px;
+  text-transform:uppercase;
+  padding: 14px 16px;
+  margin-bottom: var(--sec-sm);
+  border:1px solid var(--frame-ink);
+  letter-spacing:0.5px;
+}
+.eyebrow-olive{ background: var(--tint-olive); color:var(--canvas); }
+
+/* ---------- ribbon card (generic) ---------- */
+.ribbon-card{
+  border: 1px solid var(--frame-ink);
+  margin-bottom: var(--lg);
+}
+.ribbon-title{
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-weight:700;
+  font-size:13px;
+  text-transform:uppercase;
+  padding: 6px 12px;
+  border-bottom:1px solid var(--frame-ink);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.ribbon-body{
+  padding: 12px 16px;
+  font-family: var(--font-body);
+  font-size:14px;
+  line-height:1.4;
+  display:flex;
+  gap:16px;
+  align-items:flex-start;
+}
+.ribbon-body.tint-olive{ background: var(--tint-olive); color:var(--canvas); }
+.ribbon-body.tint-sage{ background: var(--tint-sage); }
+.ribbon-body.tint-salmon{ background: var(--tint-salmon); }
+.ribbon-body.tint-peach{ background: var(--tint-peach); }
+.ribbon-body.tint-lime{ background: var(--tint-lime); }
+.ribbon-body.tint-sky{ background: var(--tint-sky); }
+.ribbon-body.tint-steel{ background: var(--tint-steel); }
+.ribbon-body.tint-periwinkle{ background: var(--tint-periwinkle); }
+
+.photo-notch{
+  width:56px;height:56px;
+  border:1px solid var(--frame-ink);
+  background: var(--canvas);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;
+  flex:none;
+  filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.55));
+}
+
+/* ---------- stat ribbon row (dashboard) ---------- */
+.stat-row{ display:grid; grid-template-columns: repeat(5,1fr); gap: var(--md); margin-bottom: var(--sec-sm); }
+.stat-card{ border:1px solid var(--frame-ink); }
+.stat-card .ribbon-title{ font-size:11px; }
+.stat-card .stat-value{
+  font-family: var(--font-display);
+  font-weight:900;
+  font-size:26px;
+  padding: 14px 12px;
+}
+
+/* ---------- cta block red ---------- */
+.cta-block-red{
+  background: var(--primary);
+  color: var(--on-primary);
+  border:1px solid var(--frame-ink);
+  padding:16px;
+  font-family: var(--font-body);
+  font-size:14px;
+  line-height:1.4;
+  margin-bottom: var(--sec-sm);
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+}
+.cta-block-red .heading{ font-family: var(--font-ui); font-weight:700; font-size:16px; text-transform:uppercase; margin-bottom:4px; }
+
+/* ---------- buttons ---------- */
+.btn{
+  font-family: var(--font-ui);
+  font-weight:700;
+  font-size:12px;
+  text-transform:uppercase;
+  padding:6px 16px;
+  border:1px solid var(--frame-ink);
+  cursor:pointer;
+  background:var(--canvas);
+  color:var(--ink);
+}
+.btn-primary{ background: var(--frame-ink); color:var(--on-primary); }
+.btn-white{ background: var(--canvas); color:var(--ink); }
+.btn-yellow{ background: var(--yellow-sticker); color:var(--ink); }
+.btn:disabled{ opacity:0.4; cursor:not-allowed; }
+
+/* ---------- activity table ---------- */
+.data-table{ width:100%; border-collapse:collapse; }
+.data-table th{
+  font-family: var(--font-ui); font-weight:700; font-size:11px; text-transform:uppercase;
+  text-align:left; padding:8px 10px; border-bottom:1px solid var(--frame-ink); background:#f0f0f0;
+}
+.data-table td{ padding:8px 10px; border-bottom:1px solid #ccc; font-size:13px; }
+.data-table tr:hover td{ background:#f7f7f7; }
+
+/* ==========================================================
+   CHAT SCREEN
+   ========================================================== */
+.chat-wrap{ display:flex; flex-direction:column; height: calc(720px - 48px); }
+.chat-scroll{ flex:1; overflow:auto; padding-right:4px; margin-bottom: var(--lg); }
+
+.msg-row{ display:flex; margin-bottom:16px; }
+.msg-row.user{ justify-content:flex-end; }
+.msg-row.assistant{ justify-content:flex-start; }
+
+.bubble{
+  max-width:72%;
+  border:1px solid var(--frame-ink);
+  padding:10px 14px;
+  font-size:14px;
+  line-height:1.4;
+}
+.bubble.user{ background: var(--frame-ink); color: var(--on-primary); }
+.bubble.assistant{ background: var(--canvas); color: var(--ink); }
+.bubble .timestamp{ font-family: var(--font-ui); font-size:10px; color:#888; margin-top:6px; }
+.bubble.user .timestamp{ color:#bbb; }
+
+.file-chip-inline{
+  display:inline-flex; align-items:center; gap:6px;
+  background: var(--yellow-sticker); border:1px solid var(--frame-ink);
+  padding:2px 8px; font-family:var(--font-ui); font-size:11px; font-weight:700; margin-top:6px;
+}
+
+/* thinking panel = catalog spread */
+.thinking-panel{ border:1px solid var(--frame-ink); margin: 4px 0 16px 0; max-width:82%; }
+.thinking-header{
+  background:#efefef; padding:6px 12px; font-family:var(--font-ui); font-weight:700; font-size:11px;
+  text-transform:uppercase; display:flex; justify-content:space-between; align-items:center; cursor:pointer;
+  border-bottom:1px solid var(--frame-ink);
+}
+.thinking-body{ display:none; }
+.thinking-body.open{ display:block; }
+.step-row{ display:flex; gap:10px; align-items:flex-start; padding:8px 12px; border-bottom:1px solid #ddd; }
+.step-row:last-child{ border-bottom:none; }
+.step-icon{
+  width:22px;height:22px; border:1px solid var(--frame-ink); flex:none;
+  display:flex;align-items:center;justify-content:center; font-size:11px; font-weight:700;
+  background: var(--canvas);
+}
+.step-icon.ok{ background:#c9e8c9; }
+.step-icon.warn{ background: var(--yellow-sticker); }
+.step-icon.err{ background:#f2b8b8; }
+.step-text{ font-family: var(--font-ui); font-size:12px; }
+.step-text .agent-name{ font-weight:700; text-transform:uppercase; }
+.step-tint{ display:inline-block; width:8px; height:8px; margin-right:6px; border:1px solid var(--frame-ink); }
+
+/* file output card */
+.file-card{ border:1px solid var(--frame-ink); max-width:72%; margin-bottom:16px; }
+.file-card .ribbon-body{ background:#f7f7f0; }
+.file-card .file-meta{ font-family: var(--font-ui); font-size:11px; color:#555; margin-top:2px; }
+.file-actions{ display:flex; gap:8px; margin-top:8px; }
+
+/* input bar */
+.input-bar{
+  border:1px solid var(--frame-ink);
+  display:flex; align-items:flex-end; gap:8px; padding:8px;
+  background: var(--canvas);
+}
+.input-bar textarea{
+  flex:1; border:1px solid var(--frame-ink); padding:8px; font-family: var(--font-body); font-size:14px;
+  resize:none; height:40px; max-height:120px;
+}
+.attach-chips{ display:flex; gap:6px; margin-bottom:6px; flex-wrap:wrap; }
+.attach-chip{
+  display:flex; align-items:center; gap:6px; background:var(--yellow-sticker);
+  border:1px solid var(--frame-ink); padding:3px 8px; font-family:var(--font-ui); font-size:11px; font-weight:700;
+}
+.attach-chip button{ border:none; background:none; cursor:pointer; font-weight:900; }
+
+/* ==========================================================
+   AGENT REGISTRY
+   ========================================================== */
+.agent-grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap: var(--lg); }
+.agent-card{ position:relative; border:1px solid var(--frame-ink); }
+.new-burst{
+  position:absolute; top:-10px; right:-10px; background: var(--yellow-sticker);
+  border:1px solid var(--frame-ink); font-family:var(--font-ui); font-weight:700; font-size:10px;
+  padding:4px 8px; transform:rotate(15deg); filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.5)); z-index:2;
+}
+.cert-seal{
+  width:60px;height:60px; border-radius:9999px; background: var(--primary); color:var(--canvas);
+  display:flex;align-items:center;justify-content:center; text-align:center; font-family:var(--font-ui);
+  font-weight:700; font-size:8px; line-height:1.1; padding:4px; flex:none;
+  filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.5));
+}
+
+/* ==========================================================
+   FOOTER
+   ========================================================== */
+.footer-band{
+  border-top:1px solid var(--frame-ink); padding:14px 16px; font-family: var(--font-body); font-size:11px;
+  color:#333; display:flex; justify-content:space-between; grid-column:1/-1;
+}
+.footer-band a{ color: var(--link); text-decoration:underline; }
+
+/* utility */
+.muted{ color:#555; }
+.uppercase-ui{ font-family: var(--font-ui); font-weight:700; text-transform:uppercase; font-size:11px; }
+.status-pill{ display:inline-flex; align-items:center; gap:4px; font-family:var(--font-ui); font-weight:700; font-size:11px; }
+.two-col{ display:grid; grid-template-columns: 1fr 1fr; gap: var(--lg); }
+
+@media (max-width: 900px){
+  .app-shell{ flex-direction:column; }
+  .sidebar{ width:100%; display:flex; overflow-x:auto; padding:8px; }
+  .side-item{ border-left:none; border-bottom:4px solid transparent; white-space:nowrap; }
+  .side-item.active{ border-left:none; border-bottom:4px solid var(--primary); }
+  .stat-row{ grid-template-columns: repeat(2,1fr); }
+  .agent-grid{ grid-template-columns: 1fr; }
+  .two-col{ grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="page-frame">
+  <div class="page-inner" style="flex-direction:column;">
+
+    <!-- TOP BANNER -->
+    <div class="top-banner">
+      <div class="headline">
+        Autonomous Swarm.
+        <small>Local multi-agent AI. One text box, 25+ agents, zero cloud dependency.</small>
+      </div>
+      <div class="banner-right">
+        <span class="phone-callout">OLLAMA ONLINE</span>
+        <button class="buy-sticker" onclick="showScreen('chat')">+ <span>NEW</span> CHAT</button>
+      </div>
+    </div>
+
+    <div class="app-shell">
+      <!-- SIDEBAR -->
+      <div class="sidebar" id="sidebar">
+        <div class="side-item active" data-screen="dashboard" onclick="showScreen('dashboard')"><span class="glyph">▦</span> Dashboard</div>
+        <div class="side-item" data-screen="chat" onclick="showScreen('chat')"><span class="glyph">✎</span> Chat</div>
+        <div class="side-item" data-screen="agents" onclick="showScreen('agents')"><span class="glyph">◆</span> Agents</div>
+        <div class="side-item" data-screen="files" onclick="showScreen('files')"><span class="glyph">▤</span> Files</div>
+        <div class="side-item" data-screen="history" onclick="showScreen('history')"><span class="glyph">⌚</span> History</div>
+        <div class="side-divider"></div>
+        <div class="side-item" data-screen="settings" onclick="showScreen('settings')"><span class="glyph">⚙</span> Settings</div>
+        <div class="side-item" data-screen="health" onclick="showScreen('health')"><span class="glyph">♥</span> Health</div>
+        <div class="side-status">
+          <div><span class="dot on"></span>llama3.1:8b</div>
+          <div style="margin-top:4px;"><span class="dot on"></span>SQLite connected</div>
+          <div style="margin-top:4px;"><span class="dot off"></span>Docker offline</div>
+        </div>
+      </div>
+
+      <!-- MAIN -->
+      <div class="main">
+
+        <!-- ===================== DASHBOARD ===================== -->
+        <div class="screen active" id="screen-dashboard">
+          <div class="section-eyebrow eyebrow-olive">Mission Control</div>
+
+          <div class="cta-block-red">
+            <div>
+              <div class="heading">Your Swarm is ready.</div>
+              Drop a file or type a command &mdash; the Orchestrator will decide which agents to call and chain their output together.
+            </div>
+            <button class="btn btn-white" onclick="showScreen('chat')">Open Chat &rarr;</button>
+          </div>
+
+          <div class="stat-row">
+            <div class="stat-card">
+              <div class="ribbon-title">Agents</div>
+              <div class="stat-value">25</div>
+            </div>
+            <div class="stat-card">
+              <div class="ribbon-title">Tasks Today</div>
+              <div class="stat-value">12</div>
+            </div>
+            <div class="stat-card">
+              <div class="ribbon-title">Uptime</div>
+              <div class="stat-value">4h 23m</div>
+            </div>
+            <div class="stat-card">
+              <div class="ribbon-title">Active Model</div>
+              <div class="stat-value" style="font-size:15px;">llama3.1:8b</div>
+            </div>
+            <div class="stat-card">
+              <div class="ribbon-title">Inbox Files</div>
+              <div class="stat-value">2</div>
+            </div>
+          </div>
+
+          <div class="ribbon-card">
+            <div class="ribbon-title">Recent Activity</div>
+            <div style="padding:12px 16px;">
+              <table class="data-table">
+                <tr><th>When</th><th>Agent</th><th>Action</th></tr>
+                <tr><td>2m ago</td><td>email_agent</td><td>Read 3 new emails</td></tr>
+                <tr><td>15m ago</td><td>web_scraper</td><td>Fetched Hacker News front page</td></tr>
+                <tr><td>1h ago</td><td>pdf_ocr_agent</td><td>Processed doc.pdf (14 pages)</td></tr>
+              </table>
+            </div>
+          </div>
+
+          <div class="ribbon-card">
+            <div class="ribbon-title">Quick Actions</div>
+            <div class="ribbon-body" style="gap:10px;">
+              <button class="btn btn-primary" onclick="showScreen('chat')">+ New Chat</button>
+              <button class="btn btn-white" onclick="showScreen('files')">Upload File</button>
+              <button class="btn btn-white" onclick="showScreen('health')">Run Health Check</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================== CHAT ===================== -->
+        <div class="screen" id="screen-chat">
+          <div class="section-eyebrow eyebrow-olive" style="margin-bottom:16px;">Chat Workspace</div>
+
+          <div class="chat-wrap">
+            <div class="chat-scroll" id="chatScroll">
+
+              <div class="msg-row user">
+                <div class="bubble user">
+                  Scrape the top 5 headlines from Hacker News and tell me who's mentioned in them.
+                  <div class="file-chip-inline">📎 (no attachment)</div>
+                  <div class="timestamp">21:30</div>
+                </div>
+              </div>
+
+              <div class="thinking-panel">
+                <div class="thinking-header" onclick="this.nextElementSibling.classList.toggle('open')">
+                  <span>Thinking &mdash; 4 steps completed</span>
+                  <span>▾</span>
+                </div>
+                <div class="thinking-body open">
+                  <div class="step-row">
+                    <div class="step-icon ok">✓</div>
+                    <div class="step-text"><span class="step-tint" style="background:var(--tint-sky)"></span><span class="agent-name">web_scraper</span> &mdash; fetched https://news.ycombinator.com (200 OK, 1.2s)</div>
+                  </div>
+                  <div class="step-row">
+                    <div class="step-icon warn">!</div>
+                    <div class="step-text"><span class="step-tint" style="background:var(--tint-sky)"></span><span class="agent-name">web_scraper</span> &mdash; retry after SSL hiccup, succeeded on attempt 2</div>
+                  </div>
+                  <div class="step-row">
+                    <div class="step-icon ok">✓</div>
+                    <div class="step-text"><span class="step-tint" style="background:var(--tint-lime)"></span><span class="agent-name">ner_agent</span> &mdash; extracted named entities from 5 headlines</div>
+                  </div>
+                  <div class="step-row">
+                    <div class="step-icon ok">⚑</div>
+                    <div class="step-text"><span class="agent-name">Orchestrator</span> &mdash; final answer generated</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="msg-row assistant">
+                <div class="bubble assistant">
+                  Here are today's top 5 headlines from Hacker News, with named entities flagged:
+                  <br>1. <strong>OpenAI</strong> ships a new inference stack
+                  <br>2. Rust adoption grows at <strong>Cloudflare</strong>
+                  <br>3. A retrospective on <strong>Dennis Ritchie</strong>'s C
+                  <br>4. Local LLMs beat cloud latency for small tasks
+                  <br>5. <strong>SQLite</strong> hits 1 million stars
+                  <div class="timestamp">21:30</div>
+                </div>
+              </div>
+
+              <div class="file-card">
+                <div class="ribbon-title">export_headlines.csv <span class="muted" style="font-weight:400;">12.4 KB</span></div>
+                <div class="ribbon-body">
+                  <div class="photo-notch">📄</div>
+                  <div>
+                    <div class="file-meta">Generated by data_exporter_agent &middot; archive/outputs/</div>
+                    <div class="file-actions">
+                      <button class="btn btn-white">Download</button>
+                      <button class="btn btn-white">Preview</button>
+                      <button class="btn btn-white">Copy Path</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="attach-chips" id="attachChips"></div>
+            <div class="input-bar">
+              <button class="btn btn-white" title="Attach file" onclick="addChip()">📎</button>
+              <textarea id="chatInput" placeholder="Ask anything, or drop a file..."></textarea>
+              <button class="btn btn-primary" id="sendBtn" onclick="sendMessage()">Send</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================== AGENTS ===================== -->
+        <div class="screen" id="screen-agents">
+          <div class="section-eyebrow eyebrow-olive">Agent Registry &mdash; 25 Product Lines</div>
+          <div class="agent-grid">
+
+            <div class="agent-card">
+              <div class="new-burst">NEW!</div>
+              <div class="ribbon-title">WEB_SCRAPER</div>
+              <div class="ribbon-body tint-sky">
+                <div class="photo-notch">🌐</div>
+                <div>Fetches and parses live web pages. Params: <code>url</code>, <code>selector</code>. Status: <strong>Idle</strong>.
+                  <div style="margin-top:8px;"><button class="btn btn-white">Try It &rarr;</button></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="agent-card">
+              <div class="ribbon-title">EMAIL_AGENT</div>
+              <div class="ribbon-body tint-sage">
+                <div class="photo-notch">✉</div>
+                <div>Reads and sends mail over IMAP/SMTP. Requires EMAIL_USER / EMAIL_PASS. Status: <strong>Connected</strong>.
+                  <div style="margin-top:8px;"><button class="btn btn-white">Try It &rarr;</button></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="agent-card">
+              <div class="ribbon-title">GITHUB_AGENT</div>
+              <div class="ribbon-body tint-periwinkle">
+                <div class="photo-notch">⌥</div>
+                <div>Reads issues, opens PRs, inspects repos. Requires GITHUB_TOKEN. Status: <strong>Idle</strong>.
+                  <div style="margin-top:8px;"><button class="btn btn-white">Try It &rarr;</button></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="agent-card">
+              <div class="ribbon-title">PDF_OCR_AGENT</div>
+              <div class="ribbon-body tint-peach">
+                <div class="photo-notch">▤</div>
+                <div>Extracts and OCRs text from PDF and DOCX files. Status: <strong>Idle</strong>.
+                  <div style="margin-top:8px;"><button class="btn btn-white">Try It &rarr;</button></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="agent-card">
+              <div class="ribbon-title">VISION_AGENT</div>
+              <div class="ribbon-body tint-lime">
+                <div class="photo-notch">◎</div>
+                <div>Describes images via qwen3-vl:4b. Status: <strong>Idle</strong>.
+                  <div style="margin-top:8px;"><button class="btn btn-white">Try It &rarr;</button></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="agent-card">
+              <div class="ribbon-title">SQL_DB_AGENT</div>
+              <div class="ribbon-body tint-olive" style="color:var(--canvas);">
+                <div class="photo-notch">▦</div>
+                <div>Queries SQLite. Destructive commands (DROP/TRUNCATE) are blocked. Status: <strong>Connected</strong>.
+                  <div style="margin-top:8px;"><button class="btn btn-white">Try It &rarr;</button></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="agent-card">
+              <div class="ribbon-title">CODE_EXECUTOR_AGENT</div>
+              <div class="ribbon-body tint-steel">
+                <div class="photo-notch">▮</div>
+                <div>Runs code in a sandboxed Docker container. Status: <strong>Docker offline</strong>.
+                  <div style="margin-top:8px;"><button class="btn btn-white">Try It &rarr;</button></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="agent-card">
+              <div class="ribbon-title">SOCIAL_MEDIA_AGENT</div>
+              <div class="ribbon-body tint-salmon">
+                <div class="photo-notch">✦</div>
+                <div>Posts to Twitter/X and LinkedIn. Requires TWITTER_BEARER_TOKEN. Status: <strong>Idle</strong>.
+                  <div style="margin-top:8px;"><button class="btn btn-white">Try It &rarr;</button></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="ribbon-card" style="margin-top:24px;">
+            <div class="ribbon-title">System Certification</div>
+            <div class="ribbon-body">
+              <div class="cert-seal">VERIFIED<br>LOCAL &middot; PRIVATE</div>
+              <div>All 25 agents run against a local Ollama instance. No data leaves this machine unless the Cloud Fallback toggle is explicitly enabled in Settings.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================== FILES ===================== -->
+        <div class="screen" id="screen-files">
+          <div class="section-eyebrow eyebrow-olive">File Manager</div>
+          <div class="ribbon-card">
+            <div class="ribbon-title">Inbox &mdash; archive/inbox/</div>
+            <div style="padding:16px; border:1px dashed var(--frame-ink); margin:12px 16px; text-align:center; font-family:var(--font-ui); font-weight:700; font-size:12px; text-transform:uppercase;">
+              Drag files here or click to upload
+            </div>
+            <table class="data-table" style="margin:0 16px 12px; width:calc(100% - 32px);">
+              <tr><th>File</th><th>Size</th><th>Modified</th><th>Actions</th></tr>
+              <tr><td>📄 meeting.pdf</td><td>1.1 MB</td><td>2m ago</td><td><button class="btn btn-white">Preview</button> <button class="btn btn-white">Download</button></td></tr>
+              <tr><td>🎧 call_recording.mp3</td><td>8.4 MB</td><td>40m ago</td><td><button class="btn btn-white">Preview</button> <button class="btn btn-white">Download</button></td></tr>
+            </table>
+          </div>
+          <div class="ribbon-card">
+            <div class="ribbon-title">Outputs &mdash; archive/outputs/</div>
+            <table class="data-table" style="margin:12px 16px; width:calc(100% - 32px);">
+              <tr><th>File</th><th>Size</th><th>Modified</th><th>Actions</th></tr>
+              <tr><td>📊 export_headlines.csv</td><td>12.4 KB</td><td>21:30</td><td><button class="btn btn-white">Preview</button> <button class="btn btn-white">Download</button></td></tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- ===================== HISTORY ===================== -->
+        <div class="screen" id="screen-history">
+          <div class="section-eyebrow eyebrow-olive">History &amp; Past Results</div>
+          <div class="ribbon-card">
+            <div class="ribbon-title">Scrape HN headlines and extract named entities <span style="font-weight:400;">2026-07-04 21:30</span></div>
+            <div class="ribbon-body" style="justify-content:space-between;">
+              <span class="muted">3 agents &middot; 4.2s</span>
+              <span class="uppercase-ui" style="color:#1a7a2e;">Success</span>
+            </div>
+          </div>
+          <div class="ribbon-card">
+            <div class="ribbon-title">Read the PDF in my inbox and summarize it <span style="font-weight:400;">2026-07-04 20:15</span></div>
+            <div class="ribbon-body" style="justify-content:space-between;">
+              <span class="muted">2 agents &middot; 6.1s</span>
+              <span class="uppercase-ui" style="color:#1a7a2e;">Success</span>
+            </div>
+          </div>
+          <div class="ribbon-card">
+            <div class="ribbon-title">Delete the users table from the database <span style="font-weight:400;">2026-07-04 19:00</span></div>
+            <div class="ribbon-body" style="justify-content:space-between;">
+              <span class="muted">1 agent &middot; 0.1s</span>
+              <span class="uppercase-ui" style="color:var(--primary);">Blocked</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================== SETTINGS ===================== -->
+        <div class="screen" id="screen-settings">
+          <div class="section-eyebrow eyebrow-olive">Settings</div>
+          <div class="two-col">
+            <div class="ribbon-card">
+              <div class="ribbon-title">Model Selection</div>
+              <div class="ribbon-body" style="flex-direction:column; align-items:stretch; gap:10px;">
+                <label class="uppercase-ui">Primary Model
+                  <select style="width:100%; border:1px solid var(--frame-ink); padding:6px; font-family:var(--font-body);">
+                    <option>llama3.1:8b</option>
+                    <option>qwen3.5:9b</option>
+                    <option>gemini-2.5-flash</option>
+                  </select>
+                </label>
+                <label class="uppercase-ui">Cloud Fallback
+                  <select style="width:100%; border:1px solid var(--frame-ink); padding:6px; font-family:var(--font-body);">
+                    <option>Disabled</option>
+                    <option>Enabled</option>
+                  </select>
+                </label>
+                <button class="btn btn-primary" style="align-self:flex-start;">Save</button>
+              </div>
+            </div>
+            <div class="ribbon-card">
+              <div class="ribbon-title">Agent Credentials</div>
+              <div class="ribbon-body" style="flex-direction:column; align-items:stretch; gap:10px;">
+                <label class="uppercase-ui">Github Token
+                  <input type="password" placeholder="ghp_••••••••" style="width:100%; border:1px solid var(--frame-ink); padding:6px; font-family:var(--font-body);">
+                </label>
+                <span class="status-pill"><span class="dot off"></span>Not Configured</span>
+                <button class="btn btn-primary" style="align-self:flex-start;">Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================== HEALTH ===================== -->
+        <div class="screen" id="screen-health">
+          <div class="section-eyebrow eyebrow-olive">System Health</div>
+          <div class="stat-row" style="grid-template-columns: repeat(3,1fr);">
+            <div class="ribbon-card">
+              <div class="ribbon-title">Ollama Server</div>
+              <div class="ribbon-body"><span class="dot on"></span> Running (5 models loaded)</div>
+            </div>
+            <div class="ribbon-card">
+              <div class="ribbon-title">SQLite Database</div>
+              <div class="ribbon-body"><span class="dot on"></span> Connected (3 tables)</div>
+            </div>
+            <div class="ribbon-card">
+              <div class="ribbon-title">Docker Engine</div>
+              <div class="ribbon-body"><span class="dot off"></span> Not running &mdash; code_executor_agent disabled <button class="btn btn-white" style="margin-left:8px;">Fix</button></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer-band">
+      <span>&copy; 2026 Autonomous Swarm. Local build. <a href="#">Docs</a></span>
+      <span>v1.0 &middot; prototype</span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('.side-item').forEach(i=>i.classList.remove('active'));
+  document.querySelector('.side-item[data-screen="'+name+'"]').classList.add('active');
+}
+
+let chipCount = 0;
+function addChip(){
+  chipCount++;
+  const wrap = document.getElementById('attachChips');
+  const chip = document.createElement('div');
+  chip.className = 'attach-chip';
+  chip.innerHTML = '📎 file_'+chipCount+'.pdf <button onclick="this.parentElement.remove()">×</button>';
+  wrap.appendChild(chip);
+}
+
+function sendMessage(){
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  const chips = document.querySelectorAll('#attachChips .attach-chip');
+  if(!text && chips.length===0) return;
+
+  const scroll = document.getElementById('chatScroll');
+  const row = document.createElement('div');
+  row.className = 'msg-row user';
+  row.innerHTML = '<div class="bubble user">'+ (text || 'Process the attached file.') +'<div class="timestamp">just now</div></div>';
+  scroll.appendChild(row);
+
+  input.value = '';
+  document.getElementById('attachChips').innerHTML = '';
+  scroll.scrollTop = scroll.scrollHeight;
+
+  // simulated thinking + reply
+  setTimeout(()=>{
+    const think = document.createElement('div');
+    think.className = 'thinking-panel';
+    think.innerHTML = `
+      <div class="thinking-header" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span>Thinking &mdash; 1 step completed</span><span>▾</span>
+      </div>
+      <div class="thinking-body open">
+        <div class="step-row">
+          <div class="step-icon ok">⚑</div>
+          <div class="step-text"><span class="agent-name">Orchestrator</span> &mdash; final answer generated</div>
+        </div>
+      </div>`;
+    scroll.appendChild(think);
+
+    const reply = document.createElement('div');
+    reply.className = 'msg-row assistant';
+    reply.innerHTML = '<div class="bubble assistant">This is a static prototype &mdash; wire this up to <code>POST /api/chat</code> to get real Orchestrator output.<div class="timestamp">just now</div></div>';
+    scroll.appendChild(reply);
+    scroll.scrollTop = scroll.scrollHeight;
+  }, 500);
+}
+
+document.getElementById('chatInput').addEventListener('keydown', function(e){
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    sendMessage();
+  }
+});
+</script>
+</body>
+</html>

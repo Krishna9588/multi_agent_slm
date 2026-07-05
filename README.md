@@ -34,7 +34,14 @@ Open a terminal and start the server:
 ollama serve
 ```
 
-### 2. System Requirements & Models
+### 2. Start the Sandboxed Browser (Optional but Recommended)
+The Browser Agent uses Playwright to navigate the web. To protect your host machine from malicious web code, we use a Dockerized browser sandbox.
+```bash
+docker-compose up -d browser-sandbox
+```
+*(If Docker is not running, the agent will attempt to spin up an E2B Cloud Sandbox if `E2B_API_KEY` is provided in `.env`).*
+
+### 3. System Requirements & Models
 This system uses a Multi-Agent Swarm architecture that delegates tasks to specialized models. You will need to install these models locally via Ollama (or use alternatives).
 
 > **📖 Full Guide:** Please read the [System Requirements & Model Selection Guide](docs/models_and_requirements.md) for a detailed breakdown of model comparisons, cloud fallbacks, and `.env` configuration.
