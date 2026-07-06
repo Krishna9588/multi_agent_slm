@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  browser-sandbox:
+    image: browserless/chrome:latest
+    container_name: browser_agent_sandbox
+    ports:
+      - "3000:3000"
+    environment:
+      - CONNECTION_TIMEOUT=300000
+      - MAX_CONCURRENT_SESSIONS=10
+    restart: unless-stopped

@@ -41,6 +41,11 @@ PARAMETERS = {
         "required":    True,
         "description": "Full URL to fetch, must start with http:// or https://",
     },
+    "output_format": {
+        "type":        "string",
+        "required":    False,
+        "description": "Output format to return: 'text' (default) or 'markdown' (preserves structure/links).",
+    },
     "strategy": {
         "type":        "string",
         "required":    False,
@@ -77,6 +82,9 @@ _JS_BLOCK_MARKERS = [
     "you need to enable javascript",
     "javascript is disabled",
     "this site requires javascript",
+    "just a moment",
+    "checking your browser before accessing",
+    "cloudflare",
 ]
 
 # ── Shared HTML → Text helpers ─────────────────────────────────────────────────
@@ -137,10 +145,9 @@ def _extract_title_from_html(html: str) -> str:
     return re.sub(r"<[^>]+>", "", m.group(1)).strip() if m else ""
 
 
-def _bs4_parse(html: str) -> tuple[str, str]:
+def _bs4_parse(html: str, output_format: str = "text") -> tuple[str, str]:
     """
-    Parse HTML with BeautifulSoup4 → (title, plain_text).
-    Removes script/style/nav/footer before extracting text.
+    Parse HTML with BeautifulSoup4 → (title, text_or_markdown).
     """
     from bs4 import BeautifulSoup  # type: ignore
 
@@ -152,6 +159,13 @@ def _bs4_parse(html: str) -> tuple[str, str]:
     for tag in soup(["script", "style", "nav", "footer", "head",
                      "noscript", "svg", "iframe", "aside", "form"]):
         tag.decompose()
+
+    if output_format == "markdown":
+        try:
+            import markdownify
+            return title, markdownify.markdownify(str(soup), heading_style="ATX").strip()
+        except ImportError:
+            pass
 
     raw = soup.get_text(separator=" ", strip=True)
     return title, _clean(raw)
@@ -198,7 +212,7 @@ _URLLIB_HEADERS = {
     "Accept":          _HEADERS["Accept"],
 }
 
-def _strategy_urllib(url: str) -> tuple[str, str]:
+def _strategy_urllib(url: str, output_format: str = "text") -> tuple[str, str]:
     """
     Fetch with urllib + html.parser.
     No external dependencies. Good for simple static sites.
@@ -231,18 +245,13 @@ def _strategy_urllib(url: str) -> tuple[str, str]:
 
     html = raw_bytes.decode(charset, errors="replace")
 
-    extractor = _TextExtractor()
-    extractor.feed(html)
-
-    title = extractor.get_title() or _extract_title_from_html(html)
-    text  = _clean(extractor.get_text())
-
-    return title, text
+    title = _extract_title_from_html(html)
+    return _bs4_parse(html, output_format)
 
 
 # ── Strategy 2: requests + BeautifulSoup4 ─────────────────────────────────────
 
-def _strategy_requests(url: str) -> tuple[str, str]:
+def _strategy_requests(url: str, output_format: str = "text") -> tuple[str, str]:
     """
     Fetch with requests (better session/cookie/redirect handling) and parse
     with BeautifulSoup4 (more robust HTML parsing than stdlib html.parser).
@@ -257,12 +266,12 @@ def _strategy_requests(url: str) -> tuple[str, str]:
     resp.raise_for_status()
     resp.encoding = resp.apparent_encoding or "utf-8"
 
-    return _bs4_parse(resp.text)
+    return _bs4_parse(resp.text, output_format)
 
 
 # ── Strategy 3: parsel (Scrapy's XPath/CSS engine) ────────────────────────────
 
-def _strategy_parsel(url: str) -> tuple[str, str]:
+def _strategy_parsel(url: str, output_format: str = "text") -> tuple[str, str]:
     """
     Fetch with requests then extract using parsel's XPath selector (lxml backend).
     Scrapy's selector is more precise than BeautifulSoup for structured extraction.
@@ -332,7 +341,7 @@ async def _playwright_fetch(url: str) -> str:
         return html
 
 
-def _strategy_playwright(url: str) -> tuple[str, str]:
+def _strategy_playwright(url: str, output_format: str = "text") -> tuple[str, str]:
     """
     Full JS rendering via headless Chromium (Playwright).
     Handles SPAs, lazy-loaded content, and soft bot-detection.
@@ -345,12 +354,12 @@ def _strategy_playwright(url: str) -> tuple[str, str]:
     finally:
         loop.close()
 
-    return _bs4_parse(html)
+    return _bs4_parse(html, output_format)
 
 
 # ── Strategy 5: Selenium (headless Chrome via WebDriver) ──────────────────────
 
-def _strategy_selenium(url: str) -> tuple[str, str]:
+def _strategy_selenium(url: str, output_format: str = "text") -> tuple[str, str]:
     """
     Full JS rendering via Selenium + ChromeDriver.
     Used as a fallback when Playwright is unavailable or fails.
@@ -383,7 +392,7 @@ def _strategy_selenium(url: str) -> tuple[str, str]:
     finally:
         driver.quit()
 
-    return _bs4_parse(html)
+    return _bs4_parse(html, output_format)
 
 
 # ── Strategy registry ──────────────────────────────────────────────────────────
@@ -404,6 +413,7 @@ _STRATEGY_MAP = {name: fn for name, fn in _STRATEGIES}
 def web_scraper(
     url: str,
     strategy: str = "auto",
+    output_format: str = "text",
     max_words: int = MAX_WORDS,
 ) -> dict:
     """
@@ -452,7 +462,7 @@ def web_scraper(
 
     for name, fn in plan:
         try:
-            title, text = fn(url)
+            title, text = fn(url, output_format)
             word_count  = len(text.split())
 
             if word_count > best_words:
@@ -525,10 +535,10 @@ def web_scraper(
     }
 
     if winner is None:
-        result["error"] = (
-            "No strategy returned sufficient content (>= 150 words). "
-            "Returning best available result. "
-            + (f"Last error: {last_error}" if last_error else "")
-        )
+        # --- SWARM HANDOFF ---
+        # The site is likely a React SPA or blocking us with Cloudflare.
+        # Instead of failing, we instantly pass the torch to the Browser Agent!
+        from agents.browser_agent import browser_agent
+        return browser_agent(url)
 
     return result

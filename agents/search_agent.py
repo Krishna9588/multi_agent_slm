@@ -73,9 +73,13 @@ def _detect_backend(query: str) -> str:
 
 def _search_duckduckgo(query: str, max_results: int = 4) -> list[dict]:
     try:
-        from duckduckgo_search import DDGS
-        with DDGS() as ddgs:
-            raw = list(ddgs.text(query, max_results=max_results))
+        # Try new package name 'ddgs' first, fall back to legacy 'duckduckgo_search'
+        try:
+            from ddgs import DDGS
+        except ImportError:
+            from duckduckgo_search import DDGS
+        with DDGS() as ddgs_client:
+            raw = list(ddgs_client.text(query, max_results=max_results))
             return [
                 {
                     "title":   r.get("title", ""),

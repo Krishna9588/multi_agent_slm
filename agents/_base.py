@@ -28,7 +28,7 @@ import os
 from typing import Optional, Type
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from models import get_conversation_session, DEFAULT_MODEL
+from core.models import get_conversation_session, DEFAULT_MODEL
 
 # How many times to ask the model to fix its JSON before giving up
 _MAX_RETRIES = 3
@@ -49,7 +49,9 @@ def extract_json(text: str):
 
     # 1. Direct parse
     try:
-        return json.loads(text)
+        parsed = json.loads(text)
+        if isinstance(parsed, dict):
+            return parsed
     except json.JSONDecodeError:
         pass
 
@@ -57,19 +59,38 @@ def extract_json(text: str):
     m = re.search(r"```(?:json)?\s*([\s\S]+?)\s*```", text)
     if m:
         try:
-            return json.loads(m.group(1))
+            parsed = json.loads(m.group(1))
+            if isinstance(parsed, dict):
+                return parsed
         except json.JSONDecodeError:
             pass
 
-    # 3. Find the first complete { ... } block
-    m = re.search(r"\{[\s\S]+\}", text)
-    if m:
-        try:
-            return json.loads(m.group(0))
-        except json.JSONDecodeError:
-            pass
+    # 3. Find the first complete { ... } block (greedy → non-greedy fallback)
+    start = text.find('{')
+    if start != -1:
+        # Try progressively shorter substrings to find valid JSON
+        depth = 0
+        end_positions = []
+        for i in range(start, len(text)):
+            if text[i] == '{':
+                depth += 1
+            elif text[i] == '}':
+                depth -= 1
+                if depth == 0:
+                    end_positions.append(i)
+        
+        # Try each balanced {} block from longest to shortest
+        for end in reversed(end_positions):
+            candidate = text[start:end + 1]
+            try:
+                parsed = json.loads(candidate)
+                if isinstance(parsed, dict):
+                    return parsed
+            except json.JSONDecodeError:
+                continue
 
-    raise ValueError(f"No valid JSON found in:\n{text[:400]}")
+    # Return None instead of raising — callers must check for None
+    return None
 
 
 # ── Pydantic Schema Validation ─────────────────────────────────────────────────
@@ -150,24 +171,22 @@ def llm_analyse(
     raw = session.chat(user_prompt + schema_hint, format="json")
 
     for attempt in range(1, _MAX_RETRIES + 1):
-        try:
-            parsed = extract_json(raw)
+        parsed = extract_json(raw)
+        if parsed is not None:
             # If schema provided, validate and coerce
             if schema_class is not None:
                 parsed = validate_with_schema(parsed, schema_class)
             return parsed
-        except ValueError:
-            if attempt <= _MAX_RETRIES:
-                retry_msg = (
-                    "Your previous response was not valid JSON. "
-                    "Please respond with ONLY the JSON object — "
-                    "no markdown, no explanations, no extra text."
-                )
-                if schema_hint:
-                    retry_msg += schema_hint
-                raw = session.chat(retry_msg, format="json")
-            else:
-                break
+        
+        if attempt < _MAX_RETRIES:
+            retry_msg = (
+                "Your previous response was not valid JSON. "
+                "Please respond with ONLY the JSON object — "
+                "no markdown, no explanations, no extra text."
+            )
+            if schema_hint:
+                retry_msg += schema_hint
+            raw = session.chat(retry_msg, format="json")
 
     # Final fallback
     return {

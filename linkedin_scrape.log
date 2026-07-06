@@ -1,0 +1,64 @@
+[agents] WARNING: test_tool.py has no function named 'test_tool' — skipped
+==============================================================
+                       Unified AI System                      
+                         Mode  : AGENT                        
+                     Model : gemma4:e2b-mlx                   
+  Agents: api_discovery_agent, audio_transcription_agent, auth_agent, browser_agent, calendar_agent, code_executor_agent, data_exporter_agent, deep_research_agent, email_agent, external_service_agent, file_system_agent, github_agent, link_extractor, memory_agent, meta_agent, ner_agent, page_classifier, pdf_ocr_agent, qa_agent, search_agent, self_reflection_agent, sentiment_analysis, social_media_agent, sql_db_agent, topic_modeling, vision_agent, web_scraper
+==============================================================
+  Type a message or task.
+  Commands: /agents  /save  /reset  /chat  /agent  /council  /quit
+==============================================================
+
+You: 
+
+============================================================
+  Task: visit linkedin set location as pune, and keyword as python, ai and list down all the job posting in well strcutred manner and we need all of them in .csv and .txt file
+============================================================
+  [Prompt Pre-Processor] Analyzing complex task...
+  [Prompt Pre-Processor] Rewritten Task:
+1. Configure Search Parameters: Set the search scope on LinkedIn to filter job postings by Location: Pune and Keywords: "python", "AI".
+2. Execute Search: Perform a comprehensive search using the configured location and keywords to retrieve all relevant job postings.
+3. Data Extraction: Extract the following fields for every retrieved posting: Job Title, Company Name, Job Description, and Posting URL.
+4. Structure Data: Organize the extracted data into a structured format suitable for tabular export.
+5. Generate Output Files: Create two separate output files based on the structured data:
+    a. Export the structured job data into a Comma Separated Values (.csv) file.
+    b. Export the same structured job data into a plain text (.txt) file.
+  [Tool Selector] Active tools: browser_agent, web_scraper, data_exporter_agent, auth_agent
+  [Memory] Injected 2 past session(s) as context.
+
+[step 1] -> Calling: auth_agent(action="login", platform="linkedin")
+
+  [AuthAgent] 🔐 INTERACTIVE LOGIN — LINKEDIN
+  [AuthAgent] Opening: https://www.linkedin.com/login
+  [AuthAgent] Please log in manually (2FA, OAuth, etc.).
+  [AuthAgent] The session will be encrypted and stored for 168h.
+
+  [AuthAgent] Press ENTER here once you have logged in...   [Vault] 🔒 Session for 'linkedin' encrypted and stored.
+  [Vault]    Expires: 2026-07-12 06:45 UTC
+     Result preview: {
+  "success": true,
+  "message": "Session for 'linkedin' authenticated, encrypted, and stored.",
+  "expires_at": "2026-07-12T06:45:47.612771+00:00",
+  "security": "AES-256 encrypted at rest. File per...
+
+[step 2] -> Calling: browser_agent(url="https://www.linkedin.com/", task="Set the location filter to 'Pune'. Set the keywords search t...")
+  [Browser] 🐳 Attempting connection to local Docker sandbox (ws://localhost:3000)...
+  [Browser] ⚠️ Docker sandbox unreachable. Attempting to start it automatically...
+  [Browser] ⚠️ Could not start or connect to Docker sandbox: Command '['docker-compose', 'up', '-d', 'browser-sandbox']' returned non-zero exit status 1.
+  [Browser] ☁️ Attempting E2B Cloud Sandbox fallback...
+  [Browser] ☁️ Setting up Playwright in E2B (this takes ~1 min on cold start)...
+  [Browser] ☁️ Launching Playwright CDP server...
+  [Browser] ☁️ Connecting to E2B CDP at ws://9222-i3qlgm075nyrl43p7f673.e2b.app...
+     Result preview: {
+  "error": "Browser Autopilot failed: Isolation failed. Docker unreachable, and E2B fallback failed: BrowserType.connect_over_cdp: WebSocket error: socket hang up\nCall log:\n  - <ws connecting> ws:...
+
+[step 3] -> Final answer ready
+
+
+--------------------------------------------------------------
+ANSWER:
+The execution of the complex task involving navigating LinkedIn, applying location and keyword filters, iteratively scraping job postings, and exporting the data into CSV and TXT files failed due to an internal environment error within the Browser Autopilot agent. The reported errors indicate a failure in the underlying execution environment (e.g., Docker/sandbox issues) that prevented multi-step browser interactions.
+--------------------------------------------------------------
+
+You: 
+Exiting.

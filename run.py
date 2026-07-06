@@ -6,7 +6,9 @@ This script acts as the single point of contact for the entire architecture.
 
 Usage:
     python run.py                                  # interactive agent mode
+    python run.py --premium                        # use cloud model (gemini) for complex tasks
     python run.py --chat                           # interactive basic chat (no tools)
+    python run.py --council "your question"         # multi-LLM council deliberation
     python run.py "analyse https://proplusdata.co" # one-shot task
     python run.py --list-agents                    # show all registered agents
 
@@ -16,6 +18,7 @@ Interactive commands:
     /reset    — start a fresh session
     /chat     — switch to basic conversational chat (no agents)
     /agent    — switch to agent orchestrator mode
+    /council  — switch to Council of Models mode (multi-LLM debate)
     /quit     — exit
 """
 
@@ -23,8 +26,15 @@ import json
 import sys
 import os
 
-from models import DEFAULT_MODEL, get_conversation_session
-from orchestrator import Orchestrator
+if sys.stdout.encoding.lower() != 'utf-8':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except AttributeError:
+        pass
+
+from core.models import get_conversation_session
+import core.models
+from core.orchestrator import Orchestrator
 
 # ── Banner ─────────────────────────────────────────────────────────────────────
 
@@ -35,12 +45,12 @@ def _banner(mode="AGENT"):
     print("=" * WIDTH)
     print("  Unified AI System".center(WIDTH))
     print(f"  Mode  : {mode}".center(WIDTH))
-    print(f"  Model : {DEFAULT_MODEL}".center(WIDTH))
+    print(f"  Model : {core.models.DEFAULT_MODEL}".center(WIDTH))
     if mode == "AGENT":
         print(f"  Agents: {', '.join(agents.list_agents())}".center(WIDTH))
     print("=" * WIDTH)
     print("  Type a message or task.")
-    print("  Commands: /agents  /save  /reset  /chat  /agent  /quit")
+    print("  Commands: /agents  /save  /reset  /chat  /agent  /council  /quit")
     print("=" * WIDTH)
 
 
@@ -62,7 +72,7 @@ def _print_agents():
 # ── One-shot mode ──────────────────────────────────────────────────────────────
 
 def _run_one_shot(task: str):
-    orc = Orchestrator(verbose=True)
+    orc = Orchestrator(model=core.models.DEFAULT_MODEL, verbose=True)
     answer = orc.run(task)
     print("\n" + "-" * WIDTH)
     print("ANSWER:")
@@ -83,8 +93,8 @@ def _run_interactive(start_mode="AGENT"):
     mode = start_mode
     _banner(mode)
     
-    orc = Orchestrator(verbose=True)
-    chat_session = get_conversation_session(model=DEFAULT_MODEL)
+    orc = Orchestrator(model=core.models.DEFAULT_MODEL, verbose=True)
+    chat_session = get_conversation_session(model=core.models.DEFAULT_MODEL)
     last_results = []
 
     while True:
@@ -115,7 +125,7 @@ def _run_interactive(start_mode="AGENT"):
             continue
         elif task.lower() == "/reset":
             if mode == "AGENT":
-                orc = Orchestrator(verbose=True)
+                orc = Orchestrator(model=core.models.DEFAULT_MODEL, verbose=True)
             else:
                 chat_session.reset()
             last_results = []
@@ -129,6 +139,10 @@ def _run_interactive(start_mode="AGENT"):
             mode = "AGENT"
             _banner(mode)
             continue
+        elif task.lower() == "/council":
+            mode = "COUNCIL"
+            _banner(mode)
+            continue
 
         # ── Execution ──────────────────────────────────────────────────────────
         try:
@@ -139,6 +153,22 @@ def _run_interactive(start_mode="AGENT"):
                 print("\n" + "-" * WIDTH)
                 print("ANSWER:")
                 print(answer)
+                print("-" * WIDTH)
+            elif mode == "COUNCIL":
+                from core.council import Council
+                print("\n" + "=" * WIDTH)
+                print("  🏛️  COUNCIL OF MODELS — Deliberation Starting")
+                print("=" * WIDTH + "\n")
+                council = Council(verbose=True)
+                result = council.deliberate(task)
+                print("\n" + "=" * WIDTH)
+                print("COUNCIL VERDICT:")
+                print("=" * WIDTH)
+                print(result["final_answer"])
+                print("\n" + "-" * WIDTH)
+                votes_str = ", ".join(f"{m}: {v}" for m, v in result["votes"].items())
+                print(f"  Consensus: {'✅ YES' if result['consensus'] else '⚠️ NO'}")
+                print(f"  Votes: {votes_str}")
                 print("-" * WIDTH)
             else:
                 print("-" * WIDTH)
@@ -156,11 +186,36 @@ def _run_interactive(start_mode="AGENT"):
 
 if __name__ == "__main__":
     args = sys.argv[1:]
+    
+    if "--premium" in args:
+        core.models.DEFAULT_MODEL = "gemini-2.5-flash"
+        args.remove("--premium")
 
     if not args:
         _run_interactive("AGENT")
     elif args[0] == "--chat":
         _run_interactive("CHAT")
+    elif args[0] == "--council":
+        if len(args) > 1:
+            # One-shot council mode
+            task_str = " ".join(args[1:])
+            from core.council import Council
+            print("\n" + "=" * WIDTH)
+            print("  🏛️  COUNCIL OF MODELS — Deliberation Starting")
+            print("=" * WIDTH + "\n")
+            council = Council(verbose=True)
+            result = council.deliberate(task_str)
+            print("\n" + "=" * WIDTH)
+            print("COUNCIL VERDICT:")
+            print("=" * WIDTH)
+            print(result["final_answer"])
+            print("\n" + "-" * WIDTH)
+            votes_str = ", ".join(f"{m}: {v}" for m, v in result["votes"].items())
+            print(f"  Consensus: {'✅ YES' if result['consensus'] else '⚠️ NO'}")
+            print(f"  Votes: {votes_str}")
+            print("-" * WIDTH)
+        else:
+            _run_interactive("COUNCIL")
     elif args[0] == "--list-agents":
         _print_agents()
     else:
