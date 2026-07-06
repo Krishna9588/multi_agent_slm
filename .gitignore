@@ -1,6 +1,6 @@
 # ── Secrets & Credentials ──────────────────────────────────────────────────────
 .env
-.env.*
+
 
 # ── Encrypted Vault (session tokens, master keys) ─────────────────────────────
 archive/vault/
