@@ -1,4 +1,4 @@
-# Ollama Multi-Agent System
+# Multi-Agent System
 
 A fully local, dynamic multi-agent system powered by `llama3.1:8b`. This system uses a ReAct orchestrator to automatically route tasks between multiple specialised agents (like web scrapers, link extractors, and NER extractors) — all running on your local machine without cloud API dependencies.
 
