@@ -75,6 +75,7 @@ STRICT RULES:
 5. DEEP RESEARCH: For multi-page profiling, you MUST use `deep_research_agent`. For exporting data, you MUST use `data_exporter_agent` and ask the user for permission first.
 6. INBOX FILES: Any files (audio, pdf, images) the user mentions without a specific path are located in the 'archive/inbox/' folder. Use 'file_system_agent' to find their exact paths.
 7. BROWSER AUTOPILOT: When the task requires clicking buttons, applying filters, filling forms, iterating through a list of items on a JavaScript-rendered website, or any multi-step browser interaction, you MUST use `browser_agent`. ALWAYS pass BOTH `url` AND `task` arguments. The `task` must be a detailed, step-by-step natural language instruction of what to do (e.g., "Click the 'South Asia' filter, then 'India'. For each of the first 10 companies, click on the company name, extract the company name, website, status, batch, team size, and job info, then go back to the list."). The browser_agent will autonomously execute the steps and return structured data.
+8. SETUP/ERRORS: If any agent returns an error related to a missing setup, API key, configuration, or authentication, you MUST immediately call `setup_guide_agent` and pass the name of the failing agent to provide the user with step-by-step setup instructions.
 """
 
 
