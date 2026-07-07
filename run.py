@@ -8,6 +8,7 @@ Usage:
     python run.py                                  # interactive agent mode
     python run.py --premium                        # use cloud model (gemini) for complex tasks
     python run.py --chat                           # interactive basic chat (no tools)
+    python run.py --council "your question"         # multi-LLM council deliberation
     python run.py "analyse https://proplusdata.co" # one-shot task
     python run.py --list-agents                    # show all registered agents
 
@@ -17,6 +18,7 @@ Interactive commands:
     /reset    — start a fresh session
     /chat     — switch to basic conversational chat (no agents)
     /agent    — switch to agent orchestrator mode
+    /council  — switch to Council of Models mode (multi-LLM debate)
     /quit     — exit
 """
 
@@ -49,7 +51,7 @@ def _banner(mode="AGENT"):
         print(f"  Agents: {', '.join(agents.list_agents())}".center(WIDTH))
     print("=" * WIDTH)
     print("  Type a message or task.")
-    print("  Commands: /agents  /save  /reset  /chat  /agent  /quit")
+    print("  Commands: /agents  /save  /reset  /chat  /agent  /council  /quit")
     print("=" * WIDTH)
 
 
@@ -152,6 +154,10 @@ def _run_interactive(start_mode="AGENT", lc_mode: bool = True):
             mode = "AGENT"
             _banner(mode)
             continue
+        elif task.lower() == "/council":
+            mode = "COUNCIL"
+            _banner(mode)
+            continue
 
         # ── Execution ──────────────────────────────────────────────────────────
         try:
@@ -165,6 +171,22 @@ def _run_interactive(start_mode="AGENT", lc_mode: bool = True):
                 print("\n" + "-" * WIDTH)
                 print("ANSWER:")
                 print(answer)
+                print("-" * WIDTH)
+            elif mode == "COUNCIL":
+                from core.council import Council
+                print("\n" + "=" * WIDTH)
+                print("  🏛️  COUNCIL OF MODELS — Deliberation Starting")
+                print("=" * WIDTH + "\n")
+                council = Council(verbose=True)
+                result = council.deliberate(task)
+                print("\n" + "=" * WIDTH)
+                print("COUNCIL VERDICT:")
+                print("=" * WIDTH)
+                print(result["final_answer"])
+                print("\n" + "-" * WIDTH)
+                votes_str = ", ".join(f"{m}: {v}" for m, v in result["votes"].items())
+                print(f"  Consensus: {'✅ YES' if result['consensus'] else '⚠️ NO'}")
+                print(f"  Votes: {votes_str}")
                 print("-" * WIDTH)
             else:
                 print("-" * WIDTH)

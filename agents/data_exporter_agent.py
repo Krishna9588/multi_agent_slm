@@ -39,13 +39,13 @@ PARAMETERS = {
     "format": {
         "type":        "string",
         "required":    False,
-        "description": "The file format to export to. Must be 'csv', 'json', or 'md'. Default is 'csv'.",
+        "description": "The file format to export to. Can be 'csv', 'json', or 'md'. You can also pass multiple separated by commas (e.g. 'csv,md'). Default is 'csv'.",
     }
 }
 
 # ── Primary function ───────────────────────────────────────────────────────────
 
-def data_exporter_agent(data_json: str = "", source_file: str = "", filename_prefix: str = "export", format: str = "csv") -> dict:
+def data_exporter_agent(data_json: str = "", source_file: str = "", filename_prefix: str = "export", format: str = "csv", **kwargs) -> dict:
     """
     Parse a JSON string or read from a source file, and write to a structured file.
     """

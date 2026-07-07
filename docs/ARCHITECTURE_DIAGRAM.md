@@ -7,10 +7,10 @@ Updated to reflect the full 5-pillar cloud-equivalency infrastructure.
   │                      User / CLI (run.py)                         │
   └─────────────────────────────┬────────────────────────────────────┘
                                 │
-                  ┌─────────────▼──────────────┐
+                  ┌─────────────▼───────────────┐
                   │   Long-Term Memory (Recall) │ ◄── ChromaDB / JSON fallback
                   │      memory_store.py        │     Injects past context on start
-                  └─────────────┬──────────────┘
+                  └─────────────┬───────────────┘
                                 │
   ┌─────────────────────────────▼────────────────────────────────────┐
   │                      Orchestrator Agent                          │

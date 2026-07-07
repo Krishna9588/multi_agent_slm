@@ -1,0 +1,116 @@
+{
+  "_meta": {
+    "description": "Curated catalog of Bright Data dataset scrapers for the external_service_agent.",
+    "last_updated": "2026-07-04",
+    "free_tier": "5,000 credits/month, renews on 1st of each month, no credit card required.",
+    "api_docs": "https://docs.brightdata.com/scraping-automation/web-data-apis",
+    "how_to_find_ids": "Log into Bright Data dashboard → Scrapers Library, or call GET /datasets/list API endpoint.",
+    "endpoints": {
+      "sync_scrape": "POST https://api.brightdata.com/datasets/v3/scrape?dataset_id=<ID>",
+      "async_trigger": "POST https://api.brightdata.com/datasets/v3/trigger?dataset_id=<ID>",
+      "check_progress": "GET https://api.brightdata.com/datasets/v3/progress/<snapshot_id>",
+      "get_results": "GET https://api.brightdata.com/datasets/v3/snapshot/<snapshot_id>?format=json"
+    }
+  },
+  "actors": {
+    "linkedin_profiles": {
+      "dataset_id": "gd_l1viktl72bvl7bjuj0",
+      "name": "LinkedIn People Profiles",
+      "platform": "brightdata",
+      "description": "Scrapes LinkedIn public profiles — name, headline, experience, education, skills, location, and connections.",
+      "use_when": "User wants LinkedIn profile data, people info, or professional details.",
+      "input_template": [
+        {"url": "<linkedin_profile_url>"}
+      ],
+      "input_notes": "Pass LinkedIn profile URLs as objects with 'url' key. Each URL = 1 credit."
+    },
+    "linkedin_jobs": {
+      "dataset_id": "gd_lpfll7v5hcqtkxl6u",
+      "name": "LinkedIn Job Listings",
+      "platform": "brightdata",
+      "description": "Scrapes LinkedIn job postings — title, company, location, description, salary, applicants count, and posting date.",
+      "use_when": "User wants to scrape LinkedIn job listings or job search results.",
+      "input_template": [
+        {"url": "<linkedin_jobs_url>"}
+      ],
+      "input_notes": "Pass LinkedIn job listing URLs. Each URL = 1 credit. For search results, pass the search URL."
+    },
+    "linkedin_company": {
+      "dataset_id": "gd_l1viktl72bvl7bjuj1",
+      "name": "LinkedIn Company Profiles",
+      "platform": "brightdata",
+      "description": "Scrapes LinkedIn company pages — about, industry, size, specialties, headquarters, and employee count.",
+      "use_when": "User wants LinkedIn company information or organization profiles.",
+      "input_template": [
+        {"url": "<linkedin_company_url>"}
+      ],
+      "input_notes": "Pass LinkedIn company page URLs."
+    },
+    "google_maps": {
+      "dataset_id": "gd_l7q7dkf244hwjntr0",
+      "name": "Google Maps Businesses",
+      "platform": "brightdata",
+      "description": "Scrapes Google Maps business listings — name, address, phone, website, rating, reviews, hours, and photos.",
+      "use_when": "User wants Google Maps data, local businesses, or location reviews.",
+      "input_template": [
+        {"url": "<google_maps_url>"}
+      ],
+      "input_notes": "Pass Google Maps place/search URLs."
+    },
+    "google_search": {
+      "dataset_id": "gd_mfz5x93lmsjjjylob",
+      "name": "Google Search SERP (Top 100)",
+      "platform": "brightdata",
+      "description": "Scrapes Google search results pages — titles, URLs, snippets, and featured snippets for any query.",
+      "use_when": "User wants Google search results or SERP data.",
+      "input_template": [
+        {"url": "https://www.google.com/search?q=<search_query>"}
+      ],
+      "input_notes": "Pass Google search URLs with the query encoded in the 'q' parameter."
+    },
+    "amazon_products": {
+      "dataset_id": "gd_l7q7dkf244hwjntr1",
+      "name": "Amazon Product Data",
+      "platform": "brightdata",
+      "description": "Scrapes Amazon product pages — title, price, rating, reviews count, description, and seller info.",
+      "use_when": "User wants Amazon product data, prices, or reviews.",
+      "input_template": [
+        {"url": "<amazon_product_url>"}
+      ],
+      "input_notes": "Pass Amazon product page URLs."
+    },
+    "instagram_profiles": {
+      "dataset_id": "gd_l1viktl72bvl7bjuj2",
+      "name": "Instagram Profiles",
+      "platform": "brightdata",
+      "description": "Scrapes Instagram public profiles — bio, followers, following, posts count, and recent posts.",
+      "use_when": "User wants Instagram profile data or social media analytics.",
+      "input_template": [
+        {"url": "<instagram_profile_url>"}
+      ],
+      "input_notes": "Pass Instagram profile URLs."
+    },
+    "twitter_profiles": {
+      "dataset_id": "gd_l1viktl72bvl7bjuj3",
+      "name": "Twitter/X Profiles",
+      "platform": "brightdata",
+      "description": "Scrapes Twitter/X public profiles — bio, followers, tweets, and engagement data.",
+      "use_when": "User wants Twitter/X profile data or social media info.",
+      "input_template": [
+        {"url": "<twitter_profile_url>"}
+      ],
+      "input_notes": "Pass Twitter/X profile URLs."
+    },
+    "website_general": {
+      "dataset_id": "gd_web_general",
+      "name": "General Web Scraper",
+      "platform": "brightdata",
+      "description": "General-purpose website scraper via Web Unlocker — extracts clean text from any URL with anti-bot bypass.",
+      "use_when": "User wants to scrape any website that blocks normal scrapers, as a fallback.",
+      "input_template": [
+        {"url": "<target_url>"}
+      ],
+      "input_notes": "Pass any website URL. Good fallback for sites that block normal scraping."
+    }
+  }
+}
