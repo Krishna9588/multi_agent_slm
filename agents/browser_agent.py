@@ -609,8 +609,9 @@ PARAMETERS = {
     },
 }
 
+from core.models import DEFAULT_MODEL
 
-def browser_agent(url: str, task: str, model: str = "llama3.1:8b") -> dict:
+def browser_agent(url: str, task: str, model: str = DEFAULT_MODEL) -> dict:
     """
     The Browser Autopilot entry point.
     Called by the Orchestrator like any other agent.

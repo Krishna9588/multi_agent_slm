@@ -25,14 +25,14 @@ load_dotenv()
 # ── Configuration ──────────────────────────────────────────────────────────────
 
 OLLAMA_BASE_URL = "http://localhost:11434"
-DEFAULT_MODEL   = "gemma4:e2b-mlx"
-# DEFAULT_MODEL   = "gemma4:latest"
-# DEFAULT_MODEL   = "llama3.1:8b"
+DEFAULT_MODEL   = "gemma4:12b"   # Primary reasoning
+SECONDARY_MODEL = "qwen3.5:9b"     # Fast routing/selection
+VERIFIER_MODEL  = "llama3.1:8b"  # Output validation
+
 
 # List of known Ollama models
 OLLAMA_MODELS = [
-    "llama3.2:3b"
-    "gemma4:e2b-mlx"
+    "qwen3.5:9b",
     "llama3.1:8b",
     "llama3:8b",
     "qwen3:4b",
@@ -99,6 +99,9 @@ class OllamaSession(BaseConversationSession):
             "model": self.model,
             "messages": self._messages,
             "stream": stream,
+            "options": {
+                "num_ctx": 16384
+            }
         }
         
         if format:
@@ -170,7 +173,7 @@ class GeminiSession(BaseConversationSession):
         except Exception as e:
             raise RuntimeError(f"Failed to initialize Gemini Client. Error: {e}")
             
-        self._chat_session = None
+        self._chat_session: Any = None
         self.reset()
 
     def reset(self):
@@ -194,7 +197,7 @@ class GeminiSession(BaseConversationSession):
     def chat(self, user_message: str, *, stream: bool = False, format: Optional[str] = None) -> str:
         from google import genai
         
-        config_kwargs = {}
+        config_kwargs: dict[str, Any] = {}
         if format == "json":
             config_kwargs["response_mime_type"] = "application/json"
         if self.system_prompt:
@@ -256,4 +259,26 @@ def get_conversation_session(model: str = DEFAULT_MODEL, system_prompt: Optional
     else:
         # Default fallback to Ollama
         return OllamaSession(model, system_prompt)
+
+
+def get_lc_model(role: str = "default"):
+    """
+    LangChain model factory returning a BaseChatModel instance based on role.
+    """
+    try:
+        from langchain_ollama import ChatOllama
+        from langchain_google_genai import ChatGoogleGenerativeAI
+    except ImportError:
+        raise ImportError("Please install langchain-ollama and langchain-google-genai")
+
+    model_map = {
+        "default":   DEFAULT_MODEL,
+        "secondary": SECONDARY_MODEL,
+        "verifier":  VERIFIER_MODEL,
+    }
+    model_name = model_map.get(role, DEFAULT_MODEL)
+    if model_name in GEMINI_MODELS:
+        return ChatGoogleGenerativeAI(model=model_name)
+    else:
+        return ChatOllama(model=model_name, temperature=0, base_url="http://127.0.0.1:11434")
 

@@ -33,7 +33,7 @@ from agents._base import extract_json
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 
-MAX_STEPS     = 20      # max ReAct iterations (prevents infinite loops)
+MAX_STEPS     = 35      # max ReAct iterations (prevents infinite loops)
 CONTEXT_LIMIT = 800     # max words of a tool result echoed back to the LLM
 
 # Pillar 5: Tools that require human confirmation before execution
@@ -70,12 +70,9 @@ AVAILABLE TOOLS:
 STRICT RULES:
 1. JSON ONLY. No markdown, no conversational text.
 2. TO CALL A TOOL: {{"action": "call_tool", "tool": "<tool_name>", "args": {{<args>}}}}
-3. TO FINISH: {{"action": "final_answer", "answer": "<your complete, detailed answer>"}}
+7. TO FINISH: {{"action": "final_answer", "answer": "<your complete, detailed answer>"}}
 4. Re-use scraped text by passing {{"text": "$scraped_text"}} to text-analysis tools.
 5. DEEP RESEARCH: For multi-page profiling, you MUST use `deep_research_agent`. For exporting data, you MUST use `data_exporter_agent` and ask the user for permission first.
-6. INBOX FILES: Any files (audio, pdf, images) the user mentions without a specific path are located in the 'archive/inbox/' folder. Use 'file_system_agent' to find their exact paths.
-7. BROWSER AUTOPILOT: When the task requires clicking buttons, applying filters, filling forms, iterating through a list of items on a JavaScript-rendered website, or any multi-step browser interaction, you MUST use `browser_agent`. ALWAYS pass BOTH `url` AND `task` arguments. The `task` must be a detailed, step-by-step natural language instruction of what to do (e.g., "Click the 'South Asia' filter, then 'India'. For each of the first 10 companies, click on the company name, extract the company name, website, status, batch, team size, and job info, then go back to the list."). The browser_agent will autonomously execute the steps and return structured data.
-8. SETUP/ERRORS: If any agent returns an error related to a missing setup, API key, configuration, or authentication, you MUST immediately call `setup_guide_agent` and pass the name of the failing agent to provide the user with step-by-step setup instructions.
 """
 
 
@@ -150,7 +147,10 @@ def _summarise_for_context(result: dict, max_words: int = CONTEXT_LIMIT) -> str:
             compact[k] = v[:20] + [f"... and {len(v) - 20} more"]
         else:
             compact[k] = v
-    return json.dumps(compact, indent=2, ensure_ascii=False)
+    result_str = json.dumps(compact, indent=2, ensure_ascii=False)
+    if len(result_str) > 2500:
+        return result_str[:2500] + "\n... [TRUNCATED DUE TO LENGTH: Passed via _MEMORY_FILE if larger than 2000 bytes]"
+    return result_str
 
 
 # ── Orchestrator class ─────────────────────────────────────────────────────────
@@ -232,17 +232,24 @@ class Orchestrator:
         # Kick off the loop
         raw = self._session.chat(f"User task: {user_task}{memory_context}")
 
+        consecutive_errors = 0
         for step in range(1, MAX_STEPS + 1):
             decision = self._parse_decision(raw)
 
             if decision is None:
+                consecutive_errors += 1
                 self._log(f"\n[step {step}] Could not parse LLM response, asking it to retry...")
                 self._log(f"    [DEBUG RAW OUTPUT]:\n{raw}\n{'-'*40}")
+                if consecutive_errors >= 3:
+                    self._log(f"    [FATAL] LLM failed to generate valid JSON 3 times in a row. Aborting loop.")
+                    return "Error: The model repeatedly failed to generate a valid JSON tool call."
                 raw = self._session.chat(
                     "Your response was not valid JSON. "
                     "Respond with ONLY a call_tool or final_answer JSON object."
                 )
                 continue
+                
+            consecutive_errors = 0
 
             action = decision.get("action")
 

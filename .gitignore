@@ -41,4 +41,4 @@ venv/
 Thumbs.db
 
 # ── External Data ──────────────────────────────────────────────────────────────
-external_data/
+external_data/__pycache__/
