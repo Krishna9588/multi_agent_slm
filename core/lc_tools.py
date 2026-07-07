@@ -21,6 +21,14 @@ from agents.data_exporter_agent import data_exporter_agent as _data_exporter_age
 from agents.meta_agent import meta_agent as _meta_agent
 from agents.code_executor_agent import code_executor_agent as _code_executor_agent
 
+def _resolve_text(text: str, source_file: str) -> str:
+    if source_file:
+        try:
+            with open(source_file, "r", encoding="utf-8") as f:
+                return f.read()
+        except Exception as e:
+            raise ValueError(f"Could not read source_file {source_file}: {e}")
+    return text
 
 @tool
 def web_scraper(url: str, strategy: str = "auto", max_words: int = 3000) -> dict:
@@ -44,7 +52,8 @@ def sentiment_analysis(text: str = "", source_file: str = "") -> dict:
     """Analyzes the sentiment, emotional tone, and subjectivity of text using AI.
     Returns a detailed breakdown of positive/negative sentiment, overall tone, and key emotional triggers.
     Provide either raw text or a source_file path."""
-    return _sentiment_analysis(text=text, source_file=source_file)
+    resolved_text = _resolve_text(text, source_file)
+    return _sentiment_analysis(text=resolved_text)
 
 
 @tool
@@ -52,7 +61,8 @@ def ner_agent(text: str = "", source_file: str = "") -> dict:
     """Extracts named entities from text using AI.
     Entity types extracted: people, organizations, locations, products, technologies.
     Provide either raw text or a source_file path."""
-    return _ner_agent(text=text, source_file=source_file)
+    resolved_text = _resolve_text(text, source_file)
+    return _ner_agent(text=resolved_text)
 
 
 @tool
@@ -60,7 +70,8 @@ def topic_modeling(text: str = "", source_file: str = "") -> dict:
     """Analyzes text to extract the main themes, key topics, and high-level concepts using AI.
     Returns the primary theme, sub-topics, and a short summary abstract.
     Provide either raw text or a source_file path."""
-    return _topic_modeling(text=text, source_file=source_file)
+    resolved_text = _resolve_text(text, source_file)
+    return _topic_modeling(text=resolved_text)
 
 
 @tool
@@ -68,15 +79,16 @@ def page_classifier(text: str = "", source_file: str = "") -> dict:
     """Classifies a webpage or text document into a specific category/type using AI.
     Examples: 'news_article', 'ecommerce_product', 'blog_post', 'documentation', 'corporate_landing_page'.
     Provide either raw text or a source_file path."""
-    return _page_classifier(text=text, source_file=source_file)
+    resolved_text = _resolve_text(text, source_file)
+    return _page_classifier(text=resolved_text)
 
 
 @tool
-def link_extractor(url: str = "", html_content: str = "", base_url: str = "") -> dict:
+def link_extractor(url: str) -> dict:
     """Extracts, normalizes, and categorizes hyperlinks from a webpage.
-    Provide either a URL to fetch, or raw html_content (with base_url for relative link resolution).
+    Provide a URL to fetch.
     Categorizes links into internal, external, and social."""
-    return _link_extractor(url=url, html_content=html_content, base_url=base_url)
+    return _link_extractor(url=url)
 
 
 @tool
@@ -94,7 +106,12 @@ def data_exporter_agent(data: Any, format: str = "json", output_dir: str = "arch
     Supported formats: json, csv, md (markdown), txt, html.
     Use this to save the final results of your analysis to disk.
     Automatically handles formatting (e.g. flattening nested dicts for CSV)."""
-    return _data_exporter_agent(data=data, format=format, output_dir=output_dir, filename=filename)
+    import json
+    if not isinstance(data, str):
+        data_json = json.dumps(data)
+    else:
+        data_json = data
+    return _data_exporter_agent(data_json=data_json, format=format, filename_prefix=filename)
 
 
 @tool
@@ -108,12 +125,12 @@ def meta_agent(task_description: str, target_agents: List[str] = None) -> dict:
 
 
 @tool
-def code_executor_agent(code: str, language: str = "python", timeout: int = 10) -> dict:
+def code_executor_agent(code: str, timeout_seconds: int = 30) -> dict:
     """Executes arbitrary code in an isolated environment (like a sandbox).
     Currently supports Python.
     Use this to run calculations, scripts, or test code snippets.
     Returns stdout, stderr, and execution status."""
-    return _code_executor_agent(code=code, language=language, timeout=timeout)
+    return _code_executor_agent(code=code, timeout_seconds=timeout_seconds)
 
 
 ALL_TOOLS = [

@@ -539,6 +539,6 @@ def web_scraper(
         # The site is likely a React SPA or blocking us with Cloudflare.
         # Instead of failing, we instantly pass the torch to the Browser Agent!
         from agents.browser_agent import browser_agent
-        return browser_agent(url)
+        return browser_agent(url=url, task="Extract all visible text from the page and return it")
 
     return result

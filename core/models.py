@@ -277,5 +277,5 @@ def get_lc_model(role: str = "default"):
     if model_name in GEMINI_MODELS:
         return ChatGoogleGenerativeAI(model=model_name)
     else:
-        return ChatOllama(model=model_name, temperature=0)
+        return ChatOllama(model=model_name, temperature=0, base_url="http://127.0.0.1:11434")
 
