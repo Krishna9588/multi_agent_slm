@@ -111,19 +111,31 @@ def data_exporter_agent(data_json: str = "", source_file: str = "", filename_pre
             }
             
         elif format == "csv":
-            # CSV logic (expects a list of dicts)
-            if not isinstance(data, list):
-                if isinstance(data, dict):
-                    data = [data]
+            # CSV logic
+            # If data is a dict with a single key pointing to a list, unwrap it.
+            if isinstance(data, dict):
+                keys = list(data.keys())
+                if len(keys) == 1 and isinstance(data[keys[0]], list):
+                    unwrapped_list = data[keys[0]]
+                    # If it's a list of scalars (strings, ints), map to list of dicts
+                    if unwrapped_list and not isinstance(unwrapped_list[0], dict):
+                        data = [{keys[0]: item} for item in unwrapped_list]
+                    else:
+                        data = unwrapped_list
                 else:
-                    return {"error": "For CSV export, data must be a JSON array of objects or a dictionary."}
+                    data = [data]
+
+            if not isinstance(data, list):
+                return {"error": "For CSV export, data must be a JSON array of objects or a dictionary."}
             
             if len(data) == 0:
                 return {"error": "Data list is empty."}
                 
             first_item = data[0]
             if not isinstance(first_item, dict):
-                 return {"error": "For CSV export, data must be a JSON array of objects."}
+                 # Convert list of scalars to list of dicts
+                 data = [{"value": item} for item in data]
+                 first_item = data[0]
 
             headers = list(first_item.keys())
 
@@ -147,3 +159,5 @@ def data_exporter_agent(data_json: str = "", source_file: str = "", filename_pre
 
     except Exception as e:
         return {"error": f"Failed to write file: {str(e)}"}
+
+    return {"error": f"Unsupported format: {format}"}

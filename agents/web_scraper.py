@@ -23,7 +23,7 @@ import time
 import urllib.request
 import urllib.error
 from html.parser import HTMLParser
-from typing import Optional
+from typing import Optional, Callable
 
 # ── Agent metadata (shown to the LLM orchestrator) ────────────────────────────
 
@@ -388,7 +388,7 @@ def _strategy_selenium(url: str) -> tuple[str, str]:
 
 # ── Strategy registry ──────────────────────────────────────────────────────────
 
-_STRATEGIES: list[tuple[str, callable]] = [
+_STRATEGIES: list[tuple[str, Callable]] = [
     ("urllib",     _strategy_urllib),
     ("requests",   _strategy_requests),
     ("parsel",     _strategy_parsel),
