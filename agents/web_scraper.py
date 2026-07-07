@@ -71,7 +71,7 @@ _HEADERS = {
     ),
     "Accept-Language": "en-US,en;q=0.9",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Encoding": "gzip, deflate, br",
+    "Accept-Encoding": "gzip, deflate",
 }
 
 _JS_BLOCK_MARKERS = [
@@ -221,9 +221,11 @@ def _strategy_urllib(url: str, output_format: str = "text") -> tuple[str, str]:
     """
     import gzip
     import zlib
+    import ssl
 
+    context = ssl._create_unverified_context()
     req = urllib.request.Request(url, headers=_URLLIB_HEADERS)
-    with urllib.request.urlopen(req, timeout=20) as resp:
+    with urllib.request.urlopen(req, timeout=20, context=context) as resp:
         encoding = resp.headers.get("Content-Encoding", "").lower()
         charset   = resp.headers.get_content_charset() or "utf-8"
         raw_bytes = resp.read()
@@ -258,8 +260,11 @@ def _strategy_requests(url: str, output_format: str = "text") -> tuple[str, str]
     Still fails on JavaScript-rendered content.
     """
     import requests  # type: ignore
+    import warnings
+    warnings.filterwarnings("ignore", message="Unverified HTTPS request")
 
     session = requests.Session()
+    session.verify = False
     session.headers.update(_HEADERS)
 
     resp = session.get(url, timeout=20, allow_redirects=True)
@@ -279,8 +284,11 @@ def _strategy_parsel(url: str, output_format: str = "text") -> tuple[str, str]:
     """
     import requests           # type: ignore
     from parsel import Selector  # type: ignore
+    import warnings
+    warnings.filterwarnings("ignore", message="Unverified HTTPS request")
 
     session = requests.Session()
+    session.verify = False
     session.headers.update(_HEADERS)
     resp = session.get(url, timeout=20, allow_redirects=True)
     resp.raise_for_status()
@@ -349,6 +357,7 @@ def _strategy_playwright(url: str, output_format: str = "text") -> tuple[str, st
     """
     # Use a fresh event loop to avoid conflicts with any existing loop
     loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     try:
         html = loop.run_until_complete(_playwright_fetch(url))
     finally:
@@ -535,10 +544,8 @@ def web_scraper(
     }
 
     if winner is None:
-        # --- SWARM HANDOFF ---
-        # The site is likely a React SPA or blocking us with Cloudflare.
         # Instead of failing, we instantly pass the torch to the Browser Agent!
         from agents.browser_agent import browser_agent
-        return browser_agent(url)
+        return browser_agent(url, task="Extract all visible text from the page.")
 
     return result

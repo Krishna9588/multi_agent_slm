@@ -100,14 +100,13 @@ Do NOT answer the prompt yourself, just output the rewritten step-by-step instru
 
 def _select_tools(user_task: str, model: str) -> list[str]:
     """
-    Pre-processes the user task to select only the most relevant tools.
-    Dramatically reduces cognitive load on 8B models.
+    Pre-processes the user task to select the relevant tools.
     """
     available_tools = ", ".join(sorted(agents.REGISTRY.keys()))
     prompt = f"""You are a tool selector. 
 User Task: "{user_task}"
 Available Tools: {available_tools}
-Pick up to 4 tools needed to solve this. Respond with ONLY a JSON list of strings, e.g. ["web_scraper", "ner_agent"]."""
+Pick all the tools needed to solve this task comprehensively. Respond with ONLY a JSON list of strings, e.g. ["web_scraper", "finance_agent", "deep_research_agent"]. Do not restrict the number of tools if they are genuinely needed."""
 
     try:
         session = get_conversation_session(model=model, system_prompt="You only output JSON lists of strings. Do not use markdown backticks.")

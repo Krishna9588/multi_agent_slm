@@ -15,7 +15,7 @@ DESCRIPTION = (
 )
 
 PARAMETERS = {
-    "failing_agent_name": {
+    "failing_agent": {
         "type": "string",
         "required": True,
         "description": "The name of the agent that failed (e.g., 'github_agent', 'search_agent').",
@@ -27,19 +27,19 @@ PARAMETERS = {
     }
 }
 
-def setup_guide_agent(failing_agent_name: str, error_message: str = "") -> dict:
+def setup_guide_agent(failing_agent: str, error_message: str = "") -> dict:
     """Reads the docs for the failing agent and returns a friendly onboarding guide."""
     
     # Strip .py if accidentally passed
-    if failing_agent_name.endswith(".py"):
-        failing_agent_name = failing_agent_name[:-3]
+    if failing_agent.endswith(".py"):
+        failing_agent = failing_agent[:-3]
         
-    docs_path = os.path.join(os.getcwd(), "docs", "agents", f"{failing_agent_name}.md")
+    docs_path = os.path.join(os.getcwd(), "docs", "agents", f"{failing_agent}.md")
     
     if not os.path.exists(docs_path):
         return {
-            "error": f"No documentation found for {failing_agent_name}.",
-            "message": f"Please inform the user that the {failing_agent_name} lacks a rulebook in docs/agents/."
+            "error": f"No documentation found for {failing_agent}.",
+            "message": f"Please inform the user that the {failing_agent} lacks a rulebook in docs/agents/."
         }
         
     try:
@@ -56,9 +56,9 @@ def setup_guide_agent(failing_agent_name: str, error_message: str = "") -> dict:
     )
     
     prompt = (
-        f"The user tried to use '{failing_agent_name}' but encountered this error:\n"
+        f"The user tried to use '{failing_agent}' but encountered this error:\n"
         f"'{error_message}'\n\n"
-        f"Here is the official documentation rulebook for '{failing_agent_name}':\n"
+        f"Here is the official documentation rulebook for '{failing_agent}':\n"
         f"---\n{docs_content}\n---\n\n"
         f"Please provide a friendly message guiding the user through the exact steps to fix their issue."
     )
@@ -68,7 +68,7 @@ def setup_guide_agent(failing_agent_name: str, error_message: str = "") -> dict:
         response = session.chat(prompt)
         return {
             "success": True,
-            "agent": failing_agent_name,
+            "agent": failing_agent,
             "guide": response.strip()
         }
     except Exception as e:

@@ -91,10 +91,24 @@ def link_extractor(url: str) -> dict:
         ),
     }
 
+    import ssl
+    context = ssl._create_unverified_context()
+    
     req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, timeout=20) as response:
-        charset = response.headers.get_content_charset() or "utf-8"
-        html = response.read().decode(charset, errors="replace")
+    try:
+        with urllib.request.urlopen(req, timeout=20, context=context) as response:
+            charset = response.headers.get_content_charset() or "utf-8"
+            html = response.read().decode(charset, errors="replace")
+    except Exception as e:
+        return {
+            "url": url,
+            "base_domain": urllib.parse.urlparse(url).netloc.lower(),
+            "internal_links": [],
+            "external_links": [],
+            "social_links": [],
+            "total": 0,
+            "error": str(e)
+        }
 
     base_parsed = urllib.parse.urlparse(url)
     base_domain = base_parsed.netloc.lower()

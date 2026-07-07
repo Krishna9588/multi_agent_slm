@@ -141,6 +141,8 @@ websockets==16.0
 wikipedia==1.4.0
 wsproto==1.3.2
 yarl==1.24.2
-
 e2b>=0.14.0
 markdownify==1.2.3
+yfinance==0.2.40
+pandas
+yahooquery==2.4.1

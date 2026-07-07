@@ -204,9 +204,9 @@ class GeminiSession(BaseConversationSession):
         if config_kwargs:
             config = genai.types.GenerateContentConfig(**config_kwargs)
 
-        # Retry logic for key rotation
+        # Retry logic for key rotation and rate limits
         last_error = None
-        for _ in range(len(self.api_keys)):
+        for _ in range(15): # Allow up to 15 retries for rate limits or key rotations
             try:
                 if stream:
                     response = self._chat_session.send_message_stream(user_message, config=config)
@@ -224,20 +224,23 @@ class GeminiSession(BaseConversationSession):
                 last_error = e
                 print(f"\n  [Models] ⚠️ Gemini request failed: {e}")
                 
+                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                    import time
+                    print("  [Models] ⏳ Rate limit hit! Sleeping for 15 seconds before retrying...")
+                    time.sleep(15)
+                    continue # Retry with the same key
+                
                 if len(self.api_keys) > 1:
                     self.current_key_idx = (self.current_key_idx + 1) % len(self.api_keys)
                     print(f"  [Models] 🔄 Rotating to next GEMINI_API_KEY (index {self.current_key_idx}) and retrying...")
                     
                     # Reinitialize client and chat session with new key
                     self.client = genai.Client(api_key=self.api_keys[self.current_key_idx])
-                    # Need to recreate the chat session to use the new client
-                    # We lose context of previous turns in this exact object, but for 
-                    # one-shot tool calls and simple ReAct loops this is usually fine.
                     self._chat_session = self.client.chats.create(model=self.model, config=config)
                 else:
                     raise e
                     
-        raise RuntimeError(f"All {len(self.api_keys)} GEMINI_API_KEY(s) failed. Last error: {last_error}")
+        raise RuntimeError(f"All retries failed. Last error: {last_error}")
 
 # ── Factory Function ───────────────────────────────────────────────────────────
 

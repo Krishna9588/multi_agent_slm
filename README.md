@@ -6,7 +6,7 @@ A fully local, dynamic multi-agent system powered by LLMs running a ReAct orches
 
 ## What is this?
 
-This is a dynamic, multi-agent AI system designed to operate as an autonomous digital worker. Instead of a single LLM trying to execute all workflows, this system uses a **ReAct (Reason-Act) Orchestrator** to dynamically route tasks across a swarm of **28 highly-specialized AI Agents**. 
+This is a dynamic, multi-agent AI system designed to operate as an autonomous digital worker. Instead of a single LLM trying to execute all workflows, this system uses a **ReAct (Reason-Act) Orchestrator** to dynamically route tasks across a swarm of **32 highly-specialized AI Agents**. 
 
 It can browse the web, write and execute code, clone Git repositories, manage calendars, query databases, and structurally extract data—while autonomously self-correcting and recovering from execution errors.
 
@@ -26,7 +26,7 @@ Our stack is built for speed, resilience, and maximum autonomy:
 
 ---
 
-## The 28-Agent Ecosystem
+## The 32-Agent Ecosystem
 
 The Orchestrator automatically selects, chains, and manages these specialized agents to solve complex requests autonomously.
 
@@ -49,6 +49,7 @@ The Orchestrator automatically selects, chains, and manages these specialized ag
 | **`sentiment_analysis`** | Analyzes tone and communicative intent. |
 | **`topic_modeling`** | Dynamically categorizes large datasets into themes. |
 | **`page_classifier`** | Identifies the fundamental nature of a scraped URL. |
+| **`data_science_agent`** | Trains predictive Machine Learning models (Random Forest) on CSV datasets using scikit-learn. |
 
 ### Multimodal Division
 | Agent | Capability |
@@ -66,6 +67,9 @@ The Orchestrator automatically selects, chains, and manages these specialized ag
 | **`auth_agent`** | Interactive login handler for authenticated sessions. |
 | **`code_executor_agent`** | Sandboxed local Python execution environment. |
 | **`file_system_agent`** | Safely organizes, moves, and compresses files in a jailed path. |
+| **`finance_agent`** | Fetches live market data and historical financials via yfinance. |
+| **`pentest_agent`** | Performs basic network reconnaissance and port scanning using Nmap. |
+| **`contract_analysis_agent`** | Legal agent that analyzes NDAs to extract liabilities and breach terms. |
 
 ### Communications & Research
 | Agent | Capability |
@@ -88,7 +92,7 @@ The Orchestrator automatically selects, chains, and manages these specialized ag
 ## Step-by-Step Quick Start
 
 ### 1. The Onboarding Rulebooks
-We have auto-generated **28 Markdown Rulebooks** in the `docs/agents/` folder. If you ever try to use an agent and lack an API key, the `setup_guide_agent` will catch the error and automatically guide you through the setup process.
+We have auto-generated **32 Markdown Rulebooks** in the `docs/agents/` folder. If you ever try to use an agent and lack an API key, the `setup_guide_agent` will catch the error and automatically guide you through the setup process.
 
 ### 2. Install & Start Ollama
 Ensure you have [Ollama](https://ollama.com/) installed on your machine.
@@ -136,10 +140,10 @@ python tests/test_swarm.py
 ```text
 multi-agent-system/
 ├── run.py                 ← Main Orchestrator CLI
-├── agents/                ← 28 highly-specialized Swarm Tools
+├── agents/                ← 32 highly-specialized Swarm Tools
 ├── core/                  ← ReAct Loop and Model integrations
 ├── docs/                  
-│   └── agents/            ← 28 Auto-Generated Rulebooks for API setups
+│   └── agents/            ← 32 Auto-Generated Rulebooks for API setups
 ├── archive/               ← Outputs, scraped CSVs, and logs
 ├── scripts/               ← Helper utilities and code generators
 └── tests/                 ← Execution test suites
