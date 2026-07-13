@@ -10,8 +10,17 @@ class AgentState(TypedDict):
     # Messages list that appends new messages automatically
     messages: Annotated[Sequence[BaseMessage], operator.add]
     
-    # Shared scratchpad for storing raw scraped data before processing
-    context: str 
+    # Stores the raw research goal/prompt from the user
+    task_prompt: str
     
-    # Track the current active phase (e.g., 'researching', 'coding', 'reporting')
-    current_phase: str 
+    # Stores raw scraped texts from different sources (website, linkedin, etc.)
+    raw_data: dict
+    
+    # Stores the synthesized JSON after the analysis agent runs
+    structured_data: dict
+    
+    # Tracks the final report path
+    report_path: str
+    
+    # Tracks any errors encountered in the graph
+    errors: list[str] 

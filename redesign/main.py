@@ -8,21 +8,27 @@ def main():
     
     app = create_graph()
     
-    # Initial seed state
-    initial_state = {
-        "messages": [],
-        "context": "",
-        "current_phase": "init"
-    }
-    
-    print("\n[System] Graph compiled successfully.")
-    print("[System] Local Ollama connections initialized.")
-    print("[System] Ready for zero-cost task execution.\n")
-    
     if len(sys.argv) > 1:
         task = " ".join(sys.argv[1:])
-        print(f"Task received: {task}")
-        # To be implemented: app.invoke(...)
+        print(f"Task received: {task}\n")
+        
+        initial_state = {
+            "task_prompt": task,
+            "messages": [],
+            "raw_data": {},
+            "structured_data": {},
+            "report_path": "",
+            "errors": []
+        }
+        
+        # Stream the graph execution to see logs in real-time
+        for output in app.stream(initial_state):
+            for key, value in output.items():
+                print(f"--- Finished node: {key} ---")
+                
+        print("\n==================================================")
+        print(" Task Completed successfully.")
+        print("==================================================")
     else:
         print("Usage: python -m redesign.main 'Your research task here'")
 
