@@ -23,7 +23,7 @@ import time
 import urllib.request
 import urllib.error
 from html.parser import HTMLParser
-from typing import Optional
+from typing import Optional, Callable
 
 # ── Agent metadata (shown to the LLM orchestrator) ────────────────────────────
 
@@ -397,7 +397,7 @@ def _strategy_selenium(url: str, output_format: str = "text") -> tuple[str, str]
 
 # ── Strategy registry ──────────────────────────────────────────────────────────
 
-_STRATEGIES: list[tuple[str, callable]] = [
+_STRATEGIES: list[tuple[str, Callable]] = [
     ("urllib",     _strategy_urllib),
     ("requests",   _strategy_requests),
     ("parsel",     _strategy_parsel),
@@ -539,6 +539,6 @@ def web_scraper(
         # The site is likely a React SPA or blocking us with Cloudflare.
         # Instead of failing, we instantly pass the torch to the Browser Agent!
         from agents.browser_agent import browser_agent
-        return browser_agent(url)
+        return browser_agent(url=url, task="Extract all visible text from the page and return it")
 
     return result

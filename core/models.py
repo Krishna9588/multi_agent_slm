@@ -25,14 +25,14 @@ load_dotenv()
 # ── Configuration ──────────────────────────────────────────────────────────────
 
 OLLAMA_BASE_URL = "http://localhost:11434"
-DEFAULT_MODEL   = "gemma4:e2b-mlx"
-# DEFAULT_MODEL   = "gemma4:latest"
-# DEFAULT_MODEL   = "llama3.1:8b"
+DEFAULT_MODEL   = "gemma4:12b"   # Primary reasoning
+SECONDARY_MODEL = "qwen3.5:9b"     # Fast routing/selection
+VERIFIER_MODEL  = "llama3.1:8b"  # Output validation
+
 
 # List of known Ollama models
 OLLAMA_MODELS = [
-    "llama3.2:3b"
-    "gemma4:e2b-mlx"
+    "qwen3.5:9b",
     "llama3.1:8b",
     "llama3:8b",
     "qwen3:4b",
@@ -99,6 +99,9 @@ class OllamaSession(BaseConversationSession):
             "model": self.model,
             "messages": self._messages,
             "stream": stream,
+            "options": {
+                "num_ctx": 16384
+            }
         }
         
         if format:
@@ -170,7 +173,7 @@ class GeminiSession(BaseConversationSession):
         except Exception as e:
             raise RuntimeError(f"Failed to initialize Gemini Client. Error: {e}")
             
-        self._chat_session = None
+        self._chat_session: Any = None
         self.reset()
 
     def reset(self):
@@ -194,7 +197,7 @@ class GeminiSession(BaseConversationSession):
     def chat(self, user_message: str, *, stream: bool = False, format: Optional[str] = None) -> str:
         from google import genai
         
-        config_kwargs = {}
+        config_kwargs: dict[str, Any] = {}
         if format == "json":
             config_kwargs["response_mime_type"] = "application/json"
         if self.system_prompt:
@@ -204,9 +207,9 @@ class GeminiSession(BaseConversationSession):
         if config_kwargs:
             config = genai.types.GenerateContentConfig(**config_kwargs)
 
-        # Retry logic for key rotation
+        # Retry logic for key rotation and rate limits
         last_error = None
-        for _ in range(len(self.api_keys)):
+        for _ in range(15): # Allow up to 15 retries for rate limits or key rotations
             try:
                 if stream:
                     response = self._chat_session.send_message_stream(user_message, config=config)
@@ -224,20 +227,23 @@ class GeminiSession(BaseConversationSession):
                 last_error = e
                 print(f"\n  [Models] ⚠️ Gemini request failed: {e}")
                 
+                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                    import time
+                    print("  [Models] ⏳ Rate limit hit! Sleeping for 15 seconds before retrying...")
+                    time.sleep(15)
+                    continue # Retry with the same key
+                
                 if len(self.api_keys) > 1:
                     self.current_key_idx = (self.current_key_idx + 1) % len(self.api_keys)
                     print(f"  [Models] 🔄 Rotating to next GEMINI_API_KEY (index {self.current_key_idx}) and retrying...")
                     
                     # Reinitialize client and chat session with new key
                     self.client = genai.Client(api_key=self.api_keys[self.current_key_idx])
-                    # Need to recreate the chat session to use the new client
-                    # We lose context of previous turns in this exact object, but for 
-                    # one-shot tool calls and simple ReAct loops this is usually fine.
                     self._chat_session = self.client.chats.create(model=self.model, config=config)
                 else:
                     raise e
                     
-        raise RuntimeError(f"All {len(self.api_keys)} GEMINI_API_KEY(s) failed. Last error: {last_error}")
+        raise RuntimeError(f"All retries failed. Last error: {last_error}")
 
 # ── Factory Function ───────────────────────────────────────────────────────────
 
@@ -253,4 +259,26 @@ def get_conversation_session(model: str = DEFAULT_MODEL, system_prompt: Optional
     else:
         # Default fallback to Ollama
         return OllamaSession(model, system_prompt)
+
+
+def get_lc_model(role: str = "default"):
+    """
+    LangChain model factory returning a BaseChatModel instance based on role.
+    """
+    try:
+        from langchain_ollama import ChatOllama
+        from langchain_google_genai import ChatGoogleGenerativeAI
+    except ImportError:
+        raise ImportError("Please install langchain-ollama and langchain-google-genai")
+
+    model_map = {
+        "default":   DEFAULT_MODEL,
+        "secondary": SECONDARY_MODEL,
+        "verifier":  VERIFIER_MODEL,
+    }
+    model_name = model_map.get(role, DEFAULT_MODEL)
+    if model_name in GEMINI_MODELS:
+        return ChatGoogleGenerativeAI(model=model_name)
+    else:
+        return ChatOllama(model=model_name, temperature=0, base_url="http://127.0.0.1:11434")
 
