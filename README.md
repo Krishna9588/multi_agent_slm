@@ -1,4 +1,4 @@
-# 🤖 Multi-Agent SLM Framework (V2)
+# Multi-Agent SLM Framework (V2)
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Ollama](https://img.shields.io/badge/Ollama-Local_Models-black)](https://ollama.com)
@@ -9,22 +9,24 @@ A fully local, dynamic multi-agent system powered by Small Language Models (SLMs
 
 ---
 
-## 🌟 What is this?
+## What is this?
 
 This is a resilient, dynamic multi-agent AI system designed to operate as an autonomous digital worker. Instead of relying on a single LLM to execute all workflows, this system uses a **LangGraph ReAct (Reason-Act) Orchestrator** to dynamically route tasks across a swarm of **35 highly-specialized AI Agents**. 
 
 It can browse the web, write and execute code in sandboxes, search the internet, read PDFs, clone Git repositories, and structurally extract data—while autonomously self-correcting and recovering from execution errors using zero-dependency fallbacks.
 
-## 🏗️ Architecture
+---
+
+## Architecture
 
 ```mermaid
 graph TD
     User([User Prompt]) --> Orchestrator
-    Orchestrator{LangGraph ReAct Orchestrator\n(llama3.1:8b)} 
+    Orchestrator{"LangGraph ReAct Orchestrator\n(llama3.1:8b)"}
     
-    Orchestrator -->|Web & Search| WebDivision[Web Division]
-    Orchestrator -->|Data & Code| DataDivision[Data & Code Division]
-    Orchestrator -->|Vision & Files| MediaDivision[Media Division]
+    Orchestrator -->|"Web & Search"| WebDivision["Web Division"]
+    Orchestrator -->|"Data & Code"| DataDivision["Data & Code Division"]
+    Orchestrator -->|"Media & Files"| MediaDivision["Media Division"]
     
     subgraph WebDivision [Web & Search Swarm]
         BrowserAgent(Browser Agent)
@@ -44,16 +46,16 @@ graph TD
         FileSystem(File System)
     end
     
-    WebDivision -.->|State Checkpoint| Orchestrator
-    DataDivision -.->|State Checkpoint| Orchestrator
-    MediaDivision -.->|State Checkpoint| Orchestrator
+    WebDivision -.->|"State Checkpoint"| Orchestrator
+    DataDivision -.->|"State Checkpoint"| Orchestrator
+    MediaDivision -.->|"State Checkpoint"| Orchestrator
     
-    Orchestrator --> FinalOutput([Final Result])
+    Orchestrator --> FinalOutput(["Final Result"])
 ```
 
 ---
 
-## ⚡ V2 Modernization Updates
+## V2 Modernization Updates
 
 This framework has been deeply modernized for stability and performance:
 - **LangGraph Integration**: Migrated to stateful `create_react_agent` with in-memory checkpointing.
@@ -63,7 +65,7 @@ This framework has been deeply modernized for stability and performance:
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 Our stack is built for speed, resilience, and maximum autonomy:
 
@@ -77,7 +79,7 @@ Our stack is built for speed, resilience, and maximum autonomy:
 
 ---
 
-## 🚀 Quick Start Guide
+## Step-by-Step Quick Start
 
 ### 1. Install Dependencies
 Ensure you have Python 3.10+ installed.
@@ -127,7 +129,7 @@ python run.py --premium "Search for SpaceX news, write a python script to fetch 
 
 ---
 
-## 🤖 The 35-Agent Ecosystem
+## The 35-Agent Ecosystem
 
 Run `python run.py --list-agents` to see the full list of highly specialized agents in the registry.
 
@@ -140,7 +142,7 @@ Run `python run.py --list-agents` to see the full list of highly specialized age
 
 ---
 
-## 🧪 Testing
+## Testing
 
 The repository includes a comprehensive `pytest` test suite covering agent initialization, fallbacks, and API resiliency.
 ```bash
@@ -149,7 +151,7 @@ pytest tests/
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 multi_agent_slm/
