@@ -9,9 +9,21 @@ import os
 import json
 
 try:
+    import pypdf
+except ImportError:
+    pypdf = None
+
+try:
     import PyPDF2
 except ImportError:
     PyPDF2 = None
+
+def _get_pdf_reader(file_obj):
+    if pypdf is not None:
+        return pypdf.PdfReader(file_obj)
+    if PyPDF2 is not None:
+        return PyPDF2.PdfReader(file_obj)
+    raise ImportError("No PDF reader installed. Run: pip install pypdf")
 
 DESCRIPTION = (
     "The Archivist Agent for Documents. Use this to extract text from PDFs or run OCR on scanned documents. "
@@ -53,20 +65,20 @@ def pdf_ocr_agent(
     if not os.path.exists(file_path):
         return {"error": f"File not found at {file_path}"}
         
-    if PyPDF2 is None and action in ["extract_text", "search_pdf"]:
-        return {"error": "PyPDF2 is not installed. Please run `pip install PyPDF2` to use PDF features."}
+    if pypdf is None and PyPDF2 is None and action in ["extract_text", "search_pdf"]:
+        return {"error": "pypdf is not installed. Please run `pip install pypdf` to use PDF features."}
 
     if action == "extract_text":
         try:
             with open(file_path, "rb") as f:
-                reader = PyPDF2.PdfReader(f)
+                reader = _get_pdf_reader(f)
                 total_pages = len(reader.pages)
                 
                 text = ""
                 if page_num > 0:
                     if page_num > total_pages:
                         return {"error": f"Page {page_num} out of bounds. Document only has {total_pages} pages."}
-                    text = reader.pages[page_num - 1].extract_text()
+                    text = reader.pages[page_num - 1].extract_text() or ""
                 else:
                     # EDGE CASE: Don't extract a 500 page book at once.
                     max_pages = min(total_pages, 5)
@@ -90,14 +102,13 @@ def pdf_ocr_agent(
             
         try:
             with open(file_path, "rb") as f:
-                reader = PyPDF2.PdfReader(f)
+                reader = _get_pdf_reader(f)
                 total_pages = len(reader.pages)
                 
                 matches = []
                 for i in range(total_pages):
                     text = reader.pages[i].extract_text()
                     if text and keyword.lower() in text.lower():
-                        # Extract a snippet around the keyword
                         idx = text.lower().find(keyword.lower())
                         start = max(0, idx - 100)
                         end = min(len(text), idx + 100)
@@ -110,7 +121,7 @@ def pdf_ocr_agent(
                 return {
                     "success": True,
                     "total_matches": len(matches),
-                    "matches": matches[:10] # Return top 10 matches to save context
+                    "matches": matches[:10]
                 }
         except Exception as e:
             return {"error": f"Failed to search PDF: {str(e)}"}

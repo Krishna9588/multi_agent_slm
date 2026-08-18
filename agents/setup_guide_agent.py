@@ -72,4 +72,11 @@ def setup_guide_agent(failing_agent: str, error_message: str = "") -> dict:
             "guide": response.strip()
         }
     except Exception as e:
-        return {"error": f"Failed to generate guide via LLM: {str(e)}"}
+        # Fallback: Provide the raw rulebook content directly if LLM is offline
+        return {
+            "success": True,
+            "agent": failing_agent,
+            "guide": f"Setup instructions for '{failing_agent}':\n\n{docs_content}",
+            "offline_fallback": True,
+            "reason": str(e)
+        }

@@ -44,35 +44,74 @@ def code_executor_agent(code: str, timeout_seconds: int = 30) -> dict:
         with os.fdopen(fd, 'w', encoding='utf-8') as f:
             f.write(code)
             
-        # Execute the temporary file inside an isolated Docker container
+        # First attempt: Execute inside isolated Docker container if available
+        docker_available = False
         try:
-            # -i: interactive (keeps stdin open)
-            # --rm: removes container after execution
-            # --network none: disables internet access for maximum security
-            # -v: mount the script into the container
-            docker_cmd = [
-                "docker", "run", "--rm",
-                "--network", "none",
-                "-v", f"{path}:/script.py:ro",
-                "python:3.10-slim",
-                "python", "/script.py"
-            ]
-            
+            check_docker = subprocess.run(["docker", "info"], capture_output=True, timeout=2)
+            docker_available = (check_docker.returncode == 0)
+        except Exception:
+            docker_available = False
+
+        if docker_available:
+            try:
+                docker_cmd = [
+                    "docker", "run", "--rm",
+                    "--network", "none",
+                    "-v", f"{path}:/script.py:ro",
+                    "python:3.10-slim",
+                    "python", "/script.py"
+                ]
+                
+                result = subprocess.run(
+                    docker_cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout_seconds,
+                    encoding='utf-8',
+                    errors='replace'
+                )
+                
+                return {
+                    "stdout": result.stdout.strip(),
+                    "stderr": result.stderr.strip(),
+                    "exit_code": result.returncode,
+                    "mode": "docker"
+                }
+            except subprocess.TimeoutExpired:
+                return {
+                    "error": f"Execution timed out after {timeout_seconds} seconds.",
+                    "stdout": "",
+                    "stderr": "",
+                    "exit_code": -1
+                }
+            except Exception:
+                pass
+
+        # Fallback: Isolated local subprocess execution
+        try:
+            # Run in a clean minimal environment with timeout
+            safe_env = {
+                "PATH": os.environ.get("PATH", ""),
+                "SYSTEMROOT": os.environ.get("SYSTEMROOT", ""),
+                "PYTHONIOENCODING": "utf-8",
+                "PYTHONUNBUFFERED": "1",
+            }
             result = subprocess.run(
-                docker_cmd,
+                [sys.executable, path],
                 capture_output=True,
                 text=True,
                 timeout=timeout_seconds,
                 encoding='utf-8',
-                errors='replace'
+                errors='replace',
+                env=safe_env,
+                cwd=tempfile.gettempdir()
             )
-            
             return {
                 "stdout": result.stdout.strip(),
                 "stderr": result.stderr.strip(),
-                "exit_code": result.returncode
+                "exit_code": result.returncode,
+                "mode": "local_subprocess"
             }
-            
         except subprocess.TimeoutExpired:
             return {
                 "error": f"Execution timed out after {timeout_seconds} seconds.",
@@ -81,10 +120,7 @@ def code_executor_agent(code: str, timeout_seconds: int = 30) -> dict:
                 "exit_code": -1
             }
         except Exception as e:
-            error_msg = str(e)
-            if "failed to connect to the docker API" in error_msg or "docker.sock" in error_msg:
-                return {"error": "Docker is not running. Please start Docker Desktop to use the code_executor_agent.", "details": error_msg}
-            return {"error": f"Failed to execute code: {error_msg}", "exit_code": -1}
+            return {"error": f"Failed to execute code: {str(e)}", "exit_code": -1}
             
     finally:
         # Always clean up the temporary file

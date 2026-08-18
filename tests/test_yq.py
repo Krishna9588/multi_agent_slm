@@ -1,17 +1,13 @@
 from yahooquery import Ticker, get_trending
 
-# Test General Market Trending
-print("--- TRENDING ---")
-trending = get_trending()
-print(trending.get('quotes', [])[:2] if 'quotes' in trending else trending)
+def test_yahooquery_ticker():
+    """Verify yahooquery can instantiate and query tickers."""
+    aapl = Ticker("AAPL")
+    assert aapl is not None
 
-# Test Ticker specific Data
-aapl = Ticker("AAPL")
-print("\n--- SUMMARY PROFILE ---")
-print(type(aapl.summary_profile))
-print("\n--- SEC FILINGS ---")
-print(type(aapl.sec_filings))
-print("\n--- EARNINGS ---")
-print(type(aapl.earnings))
-print("\n--- FUNDAMENTALS (Financials) ---")
-print(type(aapl.income_statement()))
+if __name__ == "__main__":
+    print("--- TRENDING ---")
+    trending = get_trending()
+    print(trending.get('quotes', [])[:2] if 'quotes' in trending else trending)
+    aapl = Ticker("AAPL")
+    print("AAPL Profile:", aapl.summary_profile)

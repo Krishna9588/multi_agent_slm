@@ -1,14 +1,67 @@
-# Multi-Model Agents
+# Multi-Agent SLM Framework (V2)
 
-A fully local, dynamic multi-agent system powered by LLMs running a ReAct orchestration loop.
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Ollama](https://img.shields.io/badge/Ollama-Local_Models-black)](https://ollama.com)
+[![LangGraph](https://img.shields.io/badge/LangGraph-Orchestration-00c853)](https://langchain-ai.github.io/langgraph/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A fully local, dynamic multi-agent system powered by Small Language Models (SLMs) running a **LangGraph ReAct orchestration loop**.
 
 ---
 
 ## What is this?
 
-This is a dynamic, multi-agent AI system designed to operate as an autonomous digital worker. Instead of a single LLM trying to execute all workflows, this system uses a **ReAct (Reason-Act) Orchestrator** to dynamically route tasks across a swarm of **32 highly-specialized AI Agents**. 
+This is a resilient, dynamic multi-agent AI system designed to operate as an autonomous digital worker. Instead of relying on a single LLM to execute all workflows, this system uses a **LangGraph ReAct (Reason-Act) Orchestrator** to dynamically route tasks across a swarm of **35 highly-specialized AI Agents**. 
 
-It can browse the web, write and execute code, clone Git repositories, manage calendars, query databases, and structurally extract data—while autonomously self-correcting and recovering from execution errors.
+It can browse the web, write and execute code in sandboxes, search the internet, read PDFs, clone Git repositories, and structurally extract data—while autonomously self-correcting and recovering from execution errors using zero-dependency fallbacks.
+
+---
+
+## Architecture
+
+```mermaid
+graph TD
+    User([User Prompt]) --> Orchestrator
+    Orchestrator{"LangGraph ReAct Orchestrator\n(llama3.1:8b)"}
+    
+    Orchestrator -->|"Web & Search"| WebDivision["Web Division"]
+    Orchestrator -->|"Data & Code"| DataDivision["Data & Code Division"]
+    Orchestrator -->|"Media & Files"| MediaDivision["Media Division"]
+    
+    subgraph WebDivision [Web & Search Swarm]
+        BrowserAgent(Browser Agent)
+        SearchAgent(Search Agent)
+        ScraperAgent(Web Scraper)
+    end
+    
+    subgraph DataDivision [Data & Logic Swarm]
+        CodeExecutor(Code Executor)
+        DataStruct(Data Structuring)
+        SQLAgent(SQL Admin)
+    end
+    
+    subgraph MediaDivision [Media & Files Swarm]
+        VisionAgent(Vision Agent)
+        PDFAgent(PDF OCR)
+        FileSystem(File System)
+    end
+    
+    WebDivision -.->|"State Checkpoint"| Orchestrator
+    DataDivision -.->|"State Checkpoint"| Orchestrator
+    MediaDivision -.->|"State Checkpoint"| Orchestrator
+    
+    Orchestrator --> FinalOutput(["Final Result"])
+```
+
+---
+
+## V2 Modernization Updates
+
+This framework has been deeply modernized for stability and performance:
+- **LangGraph Integration**: Migrated to stateful `create_react_agent` with in-memory checkpointing.
+- **Dynamic Model Discovery**: Automatically detects installed Ollama models (`llama3.1`, `llama3.2`).
+- **Resilient Fallbacks**: Zero-dependency fallbacks for `search_agent` (REST APIs), `browser_agent` (local Playwright), and `setup_guide_agent` (offline docs).
+- **Diagnostics CLI**: Instant health checks via `python run.py --health`.
 
 ---
 
@@ -16,121 +69,84 @@ It can browse the web, write and execute code, clone Git repositories, manage ca
 
 Our stack is built for speed, resilience, and maximum autonomy:
 
-- **Core Reasoning Engine**: `llama3.1:8b` via Ollama (ReAct Orchestration)
-- **Fast Tool Sub-Agents**: `llama3.2:3b` via Ollama
-- **Multimodal Engines**: `llama3.2-vision` & Tesseract (OCR) / ffmpeg (Audio)
-- **Browser Automation**: `Playwright` & E2B Cloud Sandboxes
-- **Data Engineering**: `markdownify` for structured parsing, Vector Databases for Long-Term Memory
-- **Fallback Architecture**: Gemini API integrations for complex reasoning
-- **Environment**: Python 3.10+, Dockerized Sandboxing
-
----
-
-## The 32-Agent Ecosystem
-
-The Orchestrator automatically selects, chains, and manages these specialized agents to solve complex requests autonomously.
-
-### Web & Scraping Division
-| Agent | Capability |
-|---|---|
-| **`browser_agent`** | A full Playwright autopilot. Clicks, scrolls, and navigates SPAs dynamically. |
-| **`web_scraper`** | Clean Markdown extraction of any static webpage. |
-| **`batch_scraper_agent`** | Concurrently scrapes dozens of deep-links simultaneously via thread pools. |
-| **`search_agent`** | Real-time internet search via DuckDuckGo. |
-| **`link_extractor`** | Scans pages and extracts every available hyperlink. |
-| **`external_service_agent`** | Interfaces with Apify/Bright Data for highly-restricted scraping. |
-
-### Data Processing & AI Logic
-| Agent | Capability |
-|---|---|
-| **`data_structuring_agent`** | Dynamically discovers JSON schemas and extracts unstructured text into structured formats. |
-| **`ner_agent`** | Named Entity Recognition (People, Locations, Tech, Products). |
-| **`qa_agent`** | Internal Critic. Grades other agents' outputs and forces retries upon hallucination detection. |
-| **`sentiment_analysis`** | Analyzes tone and communicative intent. |
-| **`topic_modeling`** | Dynamically categorizes large datasets into themes. |
-| **`page_classifier`** | Identifies the fundamental nature of a scraped URL. |
-| **`data_science_agent`** | Trains predictive Machine Learning models (Random Forest) on CSV datasets using scikit-learn. |
-
-### Multimodal Division
-| Agent | Capability |
-|---|---|
-| **`vision_agent`** | Solves CAPTCHAs and reads screenshots/images. |
-| **`pdf_ocr_agent`** | Extracts deep text from PDFs and scanned images. |
-| **`audio_transcription_agent`** | Transcribes audio and video files locally. |
-
-### Operations & Integrations
-| Agent | Capability |
-|---|---|
-| **`sql_db_agent`** | Inspects SQL schemas, runs queries, and manages DB records. |
-| **`github_agent`** | Clones repositories, branches, and commits changes locally. |
-| **`api_discovery_agent`** | Dynamically probes and integrates with undocumented REST APIs. |
-| **`auth_agent`** | Interactive login handler for authenticated sessions. |
-| **`code_executor_agent`** | Sandboxed local Python execution environment. |
-| **`file_system_agent`** | Safely organizes, moves, and compresses files in a jailed path. |
-| **`finance_agent`** | Fetches live market data and historical financials via yfinance. |
-| **`pentest_agent`** | Performs basic network reconnaissance and port scanning using Nmap. |
-| **`contract_analysis_agent`** | Legal agent that analyzes NDAs to extract liabilities and breach terms. |
-
-### Communications & Research
-| Agent | Capability |
-|---|---|
-| **`email_agent`** | Reads and manages email via OAuth integrations. |
-| **`calendar_agent`** | Checks availability and schedules meetings. |
-| **`social_media_agent`** | Posts updates and reads mentions across Twitter/LinkedIn. |
-| **`deep_research_agent`** | Compound agent for deep profiling across multiple websites. |
-
-### Core System Stability
-| Agent | Capability |
-|---|---|
-| **`memory_agent`** | Vector-based long-term memory to remember past user interactions. |
-| **`meta_agent`** | Writes and injects entirely new Python agents into the codebase dynamically. |
-| **`self_reflection_agent`** | Analyzes error logs and optimizes failing code. |
-| **`setup_guide_agent`** | Onboarding Helper. Reads the rulebooks in `docs/agents/` to guide users through missing API setups. |
+- **Core Orchestrator**: `llama3.1:8b` via Ollama + LangGraph
+- **Sub-Agents**: `llama3.2:3b` via Ollama
+- **Multimodal**: `llama3.2-vision` & `pypdf`
+- **Cloud Fallback**: `gemini-3.1-flash-lite` via `langchain-google-genai`
+- **Browser Automation**: `Playwright` Headless Chromium
+- **Code Execution**: Secure local Python subprocesses
+- **Finance**: `yahooquery` (with `yfinance` fallback)
 
 ---
 
 ## Step-by-Step Quick Start
 
-### 1. The Onboarding Rulebooks
-We have auto-generated **32 Markdown Rulebooks** in the `docs/agents/` folder. If you ever try to use an agent and lack an API key, the `setup_guide_agent` will catch the error and automatically guide you through the setup process.
+### 1. Install Dependencies
+Ensure you have Python 3.10+ installed.
+```bash
+python -m venv .venv
+# Activate virtual environment
+source .venv/bin/activate      # Mac/Linux
+.\.venv\Scripts\Activate.ps1   # Windows
 
-### 2. Install & Start Ollama
-Ensure you have [Ollama](https://ollama.com/) installed on your machine.
+# Install required packages
+pip install -r requirements.txt
+playwright install
+```
+
+### 2. Start the Local AI Engine
+Ensure you have [Ollama](https://ollama.com/) installed and running.
 ```bash
 ollama serve
 ```
 
-### 3. Pull the Required Models
-In a separate terminal, pull the required local models:
+In a new terminal window, pull the required optimized models:
 ```bash
 ollama pull llama3.1:8b        # The Main Orchestrator
-ollama pull llama3.2:3b        # Sub-Agents
+ollama pull llama3.2:3b        # Fast Sub-Agents
 ollama pull llama3.2-vision    # Vision Agent
 ```
 
-### 4. Setup Python Environment
+### 3. Verify System Health
+Run the built-in diagnostic tool to ensure your environment is fully operational:
 ```bash
-python -m venv .venv
-source .venv/bin/activate      # Mac/Linux
-.\.venv\Scripts\Activate.ps1   # Windows
-pip install -r requirements.txt
+python run.py --health
 ```
 
-### 5. Run the System
+### 4. Run the Swarm!
 The **only file you need to run** is `run.py`. 
 
 ```bash
 # Start an interactive autonomous session:
 python run.py
 
-# Premium Cloud Mode (Requires GEMINI_API_KEY in .env)
-python run.py --premium
-
 # Run a one-shot task:
 python run.py "Find Python Jobs in Pune and compile a detailed CSV report."
 
-# Run the safety test suite:
-python tests/test_swarm.py
+# Premium Cloud Mode (Requires GOOGLE_API_KEY / GEMINI_API_KEY in .env)
+python run.py --premium "Search for SpaceX news, write a python script to fetch the homepage, execute it locally, and summarize the result."
+```
+
+---
+
+## The 35-Agent Ecosystem
+
+Run `python run.py --list-agents` to see the full list of highly specialized agents in the registry.
+
+| Category | Key Agents |
+|---|---|
+| **Web & Search** | `search_agent`, `browser_agent`, `web_scraper`, `batch_scraper_agent`, `link_extractor` |
+| **Data & Logic** | `code_executor_agent`, `data_structuring_agent`, `sql_db_agent`, `qa_agent`, `sentiment_analysis` |
+| **Media & Vision**| `vision_agent`, `pdf_ocr_agent`, `audio_transcription_agent` |
+| **Operations** | `github_agent`, `file_system_agent`, `finance_agent`, `setup_guide_agent` |
+
+---
+
+## Testing
+
+The repository includes a comprehensive `pytest` test suite covering agent initialization, fallbacks, and API resiliency.
+```bash
+pytest tests/
 ```
 
 ---
@@ -138,13 +154,13 @@ python tests/test_swarm.py
 ## Project Structure
 
 ```text
-multi-agent-system/
-├── run.py                 ← Main Orchestrator CLI
-├── agents/                ← 32 highly-specialized Swarm Tools
-├── core/                  ← ReAct Loop and Model integrations
+multi_agent_slm/
+├── run.py                 ← Main CLI & Orchestrator
+├── requirements.txt       ← Package dependencies
+├── agents/                ← 35 Highly-specialized Swarm Tools
+├── core/                  ← LangGraph ReAct Loop & Model integrations
 ├── docs/                  
-│   └── agents/            ← 32 Auto-Generated Rulebooks for API setups
-├── archive/               ← Outputs, scraped CSVs, and logs
-├── scripts/               ← Helper utilities and code generators
-└── tests/                 ← Execution test suites
+│   └── agents/            ← Auto-Generated Setup Rulebooks
+├── archive/               ← Outputs, scraped CSVs, and execution logs
+└── tests/                 ← Pytest Verification Suites
 ```

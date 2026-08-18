@@ -32,12 +32,18 @@ Or from the CLI:
 import json
 import time
 from typing import Optional
-from core.models import get_conversation_session
+from core.models import (
+    get_conversation_session,
+    DEFAULT_MODEL,
+    SECONDARY_MODEL,
+    VERIFIER_MODEL,
+    get_available_ollama_models
+)
 
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
-DEFAULT_COUNCIL = ["gemma4:e2b-mlx", "ministral-3:8b", "llama3.1:8b"]
+DEFAULT_COUNCIL = [DEFAULT_MODEL, SECONDARY_MODEL, VERIFIER_MODEL]
 MAX_DEBATE_ROUNDS = 2
 
 
@@ -54,11 +60,28 @@ class Council:
     def __init__(self, models: list = None, moderator: str = None, verbose: bool = True):
         """
         Args:
-            models:    List of Ollama model names to sit on the council.
+            models:    List of Ollama/Gemini model names to sit on the council.
             moderator: The model that synthesizes the final answer (defaults to first model).
             verbose:   Print the deliberation transcript to stdout.
         """
-        self.models = models or DEFAULT_COUNCIL
+        if models:
+            self.models = models
+        else:
+            avail = get_available_ollama_models()
+            if len(avail) >= 2:
+                self.models = avail[:3]
+            else:
+                self.models = [DEFAULT_MODEL, SECONDARY_MODEL, VERIFIER_MODEL]
+        
+        # Deduplicate models while preserving order
+        seen = set()
+        deduped = []
+        for m in self.models:
+            if m not in seen:
+                seen.add(m)
+                deduped.append(m)
+        self.models = deduped or [DEFAULT_MODEL]
+
         self.moderator = moderator or self.models[0]
         self.verbose = verbose
         self.transcript = []

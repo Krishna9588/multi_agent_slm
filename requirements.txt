@@ -148,3 +148,7 @@ langchain-google-genai>=2.0.0
 langchain-community>=0.3.0
 langgraph>=0.2.0
 langsmith>=0.2.0
+pypdf>=4.0.0
+yahooquery>=2.3.0
+duckduckgo-search>=6.0.0
+
