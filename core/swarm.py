@@ -1,12 +1,13 @@
 import json
 from typing import Callable, Any, Optional
+from core.models import SECONDARY_MODEL, DEFAULT_MODEL
 
 class Agent:
-    def __init__(self, name: str, instructions: str, functions: list[Callable] = None, model: str = "gemma4:e2b-mlx"):
+    def __init__(self, name: str, instructions: str, functions: list[Callable] = None, model: str = None):
         self.name = name
         self.instructions = instructions
         self.functions = functions or []
-        self.model = model
+        self.model = model or SECONDARY_MODEL or DEFAULT_MODEL
 
 class TransferToAgent:
     """Special return type from a function to signal the Swarm router to switch active agents."""

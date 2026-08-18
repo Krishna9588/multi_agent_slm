@@ -1,12 +1,27 @@
-import requests
 from bs4 import BeautifulSoup
 import markdownify
 
-html = requests.get("https://in.linkedin.com/jobs/search?keywords=Python&location=Pune&geoId=112419263&distance=25&f_TPR=r604800&f_JT=F&activeFilter=f_TPR&position=1&pageNum=0").text
+def test_html_parsing_and_markdownify():
+    sample_html = """
+    <html>
+        <head><title>Job Portal</title><style>body { color: red; }</style></head>
+        <body>
+            <nav>Menu</nav>
+            <h1>Python Developer</h1>
+            <p>We are hiring a <b>Senior Python Engineer</b> in Pune.</p>
+            <footer>Footer Links</footer>
+        </body>
+    </html>
+    """
+    soup = BeautifulSoup(sample_html, "html.parser")
+    for tag in soup(["script", "style", "nav", "footer", "head", "noscript", "svg", "iframe", "aside", "form"]):
+        tag.decompose()
 
-soup = BeautifulSoup(html, "html.parser")
-for tag in soup(["script", "style", "nav", "footer", "head", "noscript", "svg", "iframe", "aside", "form"]):
-    tag.decompose()
+    md = markdownify.markdownify(str(soup), heading_style="ATX").strip()
+    assert "Python Developer" in md
+    assert "Senior Python Engineer" in md
+    assert "Menu" not in md
 
-md = markdownify.markdownify(str(soup), heading_style="ATX").strip()
-print(repr(md[:1000]))
+if __name__ == "__main__":
+    test_html_parsing_and_markdownify()
+    print("test_parse passed.")

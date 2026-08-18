@@ -7,7 +7,7 @@ Use this agent to solve visual CAPTCHAs, describe UI elements, or extract text f
 
 import os
 import base64
-from core.models import get_conversation_session, DEFAULT_MODEL
+from core.models import get_conversation_session, VISION_MODEL, GEMINI_MODELS
 
 DESCRIPTION = (
     "A Multimodal Vision Agent. Pass it an absolute file path to an image (like a screenshot), "
@@ -34,22 +34,39 @@ def vision_agent(image_path: str, prompt: str) -> dict:
         return {"error": f"Image file not found at {image_path}"}
         
     try:
-        # We default to llama3.2-vision if available
-        vision_model = "llama3.2-vision" 
-        
         with open(image_path, "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+            raw_bytes = image_file.read()
+            encoded_string = base64.b64encode(raw_bytes).decode('utf-8')
             
-        session = get_conversation_session(model=vision_model)
-        
-        # In a real implementation with litellm/ollama, the image would be passed in the messages array.
-        # Here we simulate the context injection.
-        result = session.chat(f"Image Analysis Request: {prompt}\n[IMAGE DATA INJECTED]")
-        
-        return {
-            "success": True,
-            "vision_analysis": result.strip()
-        }
+        # Try local vision model first
+        try:
+            session = get_conversation_session(model=VISION_MODEL)
+            result = session.chat(prompt, images=[encoded_string])
+            return {
+                "success": True,
+                "model_used": VISION_MODEL,
+                "vision_analysis": result.strip()
+            }
+        except Exception as local_e:
+            # Fallback to cloud vision model if Gemini API key exists
+            if os.getenv("GEMINI_API_KEY") and os.getenv("GEMINI_API_KEY") != "your_gemini_api_key_here":
+                cloud_model = "gemini-2.5-flash"
+                from google import genai
+                from google.genai import types
+                client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+                response = client.models.generate_content(
+                    model=cloud_model,
+                    contents=[
+                        types.Part.from_bytes(data=raw_bytes, mime_type="image/png"),
+                        prompt
+                    ]
+                )
+                return {
+                    "success": True,
+                    "model_used": cloud_model,
+                    "vision_analysis": response.text.strip()
+                }
+            raise local_e
         
     except Exception as e:
         return {"error": f"Failed to analyze image: {str(e)}"}

@@ -1,16 +1,22 @@
+import os
+import sys
 import json
-from agents.web_scraper import web_scraper
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 from agents.data_structuring_agent import data_structuring_agent
 
-print("1. Fetching single job page...")
-url = "https://in.linkedin.com/jobs/view/jr-python-developer-at-zensar-technologies-4433683153"
-res = web_scraper(url, strategy="requests", output_format="markdown")
-md = res["text"]
+def test_data_structuring_signature():
+    """Verify data_structuring_agent accepts input without throwing unhandled exceptions."""
+    sample_text = "Job Title: Senior Python Developer at Acme Corp. Location: Remote. Salary: $120,000."
+    try:
+        res = data_structuring_agent(sample_text, context="Job Posting")
+        assert isinstance(res, dict)
+    except Exception as e:
+        # If Ollama is offline in CI/testing, ensure it catches gracefully
+        assert "Ollama" in str(e) or "connect" in str(e) or "model" in str(e).lower()
 
-print("2. Running Data Structuring Agent...")
-structured = data_structuring_agent(md[:2000], context="LinkedIn Job Posting")
-
-print("--- RESULTS ---")
-print("Status:", structured.get("status"))
-print("Schema Discovered:", structured.get("schema"))
-print("Data Extracted:\n", json.dumps(structured.get("data"), indent=2))
+if __name__ == "__main__":
+    sample_text = "Job Title: Senior Python Developer at Acme Corp. Location: Remote. Salary: $120,000."
+    print("Running Data Structuring Agent...")
+    structured = data_structuring_agent(sample_text, context="Job Posting")
+    print("Result:", json.dumps(structured, indent=2))

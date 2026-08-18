@@ -69,33 +69,77 @@ def _detect_backend(query: str) -> str:
     return "duckduckgo"
 
 
+import urllib.request
+import urllib.parse
+import json
+
 # ── Backend implementations ────────────────────────────────────────────────────
 
 def _search_duckduckgo(query: str, max_results: int = 4) -> list[dict]:
+    # 1. Try modern ddgs / duckduckgo_search library
     try:
-        # Try new package name 'ddgs' first, fall back to legacy 'duckduckgo_search'
         try:
             from ddgs import DDGS
         except ImportError:
             from duckduckgo_search import DDGS
         with DDGS() as ddgs_client:
             raw = list(ddgs_client.text(query, max_results=max_results))
-            return [
-                {
-                    "title":   r.get("title", ""),
-                    "url":     r.get("href", ""),
-                    "snippet": r.get("body", ""),
-                    "source":  "duckduckgo",
-                }
-                for r in raw
-            ]
-    except ImportError:
-        return []
+            if raw:
+                return [
+                    {
+                        "title":   r.get("title", ""),
+                        "url":     r.get("href", ""),
+                        "snippet": r.get("body", ""),
+                        "source":  "duckduckgo",
+                    }
+                    for r in raw
+                ]
     except Exception:
-        return []
+        pass
+
+    # 2. Zero-dependency HTTP fallback via DuckDuckGo HTML
+    try:
+        url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(query)}"
+        req = urllib.request.Request(
+            url, 
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            html_text = resp.read().decode('utf-8', errors='ignore')
+            
+        try:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html_text, "html.parser")
+            results = []
+            for res in soup.find_all("div", class_="result")[:max_results]:
+                a_tag = res.find("a", class_="result__url") or res.find("a", class_="result__snippet")
+                title_tag = res.find("a", class_="result__title")
+                snippet_tag = res.find("a", class_="result__snippet")
+                if title_tag:
+                    href = title_tag.get("href", "")
+                    if "uddg=" in href:
+                        # Extract actual target URL from DuckDuckGo redirect
+                        m = re.search(r"uddg=([^&]+)", href)
+                        if m:
+                            href = urllib.parse.unquote(m.group(1))
+                    results.append({
+                        "title": title_tag.get_text(strip=True),
+                        "url": href,
+                        "snippet": snippet_tag.get_text(strip=True) if snippet_tag else "",
+                        "source": "duckduckgo_html"
+                    })
+            if results:
+                return results
+        except Exception:
+            pass
+    except Exception:
+        pass
+
+    return []
 
 
 def _search_wikipedia(query: str, max_results: int = 4) -> list[dict]:
+    # 1. Try wikipedia python package
     try:
         import wikipedia
         search_titles = wikipedia.search(query, results=max_results)
@@ -111,14 +155,35 @@ def _search_wikipedia(query: str, max_results: int = 4) -> list[dict]:
                 })
             except Exception:
                 continue
-        return results
-    except ImportError:
-        return []
+        if results:
+            return results
     except Exception:
-        return []
+        pass
+
+    # 2. Zero-dependency Wikipedia OpenSearch REST API fallback
+    try:
+        api_url = f"https://en.wikipedia.org/w/api.php?action=opensearch&search={urllib.parse.quote(query)}&limit={max_results}&format=json"
+        req = urllib.request.Request(api_url, headers={"User-Agent": "AutonomousMultiAgent/1.0"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+            titles, snippets, urls = data[1], data[2], data[3]
+            results = []
+            for t, s, u in zip(titles, snippets, urls):
+                results.append({
+                    "title": t,
+                    "url": u,
+                    "snippet": s or f"Wikipedia article on {t}",
+                    "source": "wikipedia_api"
+                })
+            return results
+    except Exception:
+        pass
+
+    return []
 
 
 def _search_arxiv(query: str, max_results: int = 4) -> list[dict]:
+    # 1. Try arxiv package
     try:
         import arxiv
         client = arxiv.Client()
@@ -131,11 +196,38 @@ def _search_arxiv(query: str, max_results: int = 4) -> list[dict]:
                 "snippet": paper.summary[:300],
                 "source":  "arxiv",
             })
-        return results
-    except ImportError:
-        return []
+        if results:
+            return results
     except Exception:
-        return []
+        pass
+
+    # 2. Zero-dependency arXiv Atom Feed REST API fallback
+    try:
+        api_url = f"http://export.arxiv.org/api/query?search_query=all:{urllib.parse.quote(query)}&start=0&max_results={max_results}"
+        req = urllib.request.Request(api_url, headers={"User-Agent": "AutonomousMultiAgent/1.0"})
+        with urllib.request.urlopen(req, timeout=6) as resp:
+            xml_text = resp.read().decode('utf-8')
+            
+        import xml.etree.ElementTree as ET
+        root = ET.fromstring(xml_text)
+        ns = {'atom': 'http://www.w3.org/2005/Atom'}
+        results = []
+        for entry in root.findall('atom:entry', ns)[:max_results]:
+            title = entry.find('atom:title', ns)
+            summary = entry.find('atom:summary', ns)
+            link = entry.find('atom:id', ns)
+            if title is not None and link is not None:
+                results.append({
+                    "title": title.text.strip().replace('\n', ' '),
+                    "url": link.text.strip(),
+                    "snippet": summary.text.strip().replace('\n', ' ')[:300] if summary is not None else "",
+                    "source": "arxiv_api"
+                })
+        return results
+    except Exception:
+        pass
+
+    return []
 
 
 # ── Primary function ───────────────────────────────────────────────────────────

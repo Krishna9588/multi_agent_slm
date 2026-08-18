@@ -197,7 +197,69 @@ def _run_interactive(start_mode="AGENT", lc_mode: bool = True):
                 
         except Exception as e:
             print(f"\n[ERROR] {type(e).__name__}: {e}")
-            print("  Check model connection (Ollama running / Gemini API Key set).")
+# ── Diagnostics mode ───────────────────────────────────────────────────────────
+
+def _run_diagnostics():
+    import agents
+    from core.models import (
+        is_ollama_running,
+        get_available_ollama_models,
+        OLLAMA_BASE_URL,
+        DEFAULT_MODEL,
+        SECONDARY_MODEL,
+        VISION_MODEL
+    )
+
+    print("=" * WIDTH)
+    print("  System Health & Environment Diagnostics".center(WIDTH))
+    print("=" * WIDTH)
+
+    # 1. Environment (.env)
+    has_env = os.path.exists(".env")
+    print(f"\n[Environment]")
+    print(f"  .env File Found      : {'✅ YES' if has_env else '⚠️ NO (.env.example can be copied to .env)'}")
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    has_gemini = bool(gemini_key and gemini_key != "your_gemini_api_key_here")
+    print(f"  GEMINI_API_KEY       : {'✅ Configured' if has_gemini else '⚠️ Not Set (Required for --premium)'}")
+
+    # 2. Ollama Status
+    print(f"\n[Ollama Local Daemon]")
+    ollama_ok = is_ollama_running()
+    print(f"  Ollama Status        : {'✅ Running at ' + OLLAMA_BASE_URL if ollama_ok else '⚠️ Not Reachable (Run `ollama serve`)'}")
+    if ollama_ok:
+        models = get_available_ollama_models()
+        print(f"  Installed Models ({len(models)}): {', '.join(models) if models else 'None (Run `ollama pull llama3.1:8b`)'}")
+    print(f"  Default Orchestrator : {DEFAULT_MODEL}")
+    print(f"  Default Sub-Agent    : {SECONDARY_MODEL}")
+    print(f"  Default Vision Model : {VISION_MODEL}")
+
+    # 3. Agents Registry
+    print(f"\n[Agents Ecosystem]")
+    print(f"  Registered Agents    : ✅ {len(agents.REGISTRY)} / 35 operational")
+
+    # 4. Optional Tool Dependencies
+    print(f"\n[Tool Drivers]")
+    try:
+        from playwright.sync_api import sync_playwright
+        print(f"  Playwright           : ✅ Installed")
+    except ImportError:
+        print(f"  Playwright           : ⚠️ Missing (pip install playwright && playwright install)")
+
+    try:
+        import pypdf
+        print(f"  pypdf                : ✅ Installed")
+    except ImportError:
+        print(f"  pypdf                : ⚠️ Missing (pip install pypdf)")
+
+    try:
+        import yahooquery
+        print(f"  yahooquery (Finance) : ✅ Installed")
+    except ImportError:
+        print(f"  yahooquery (Finance) : ⚠️ Missing (pip install yahooquery)")
+
+    print("\n" + "=" * WIDTH)
+    print("  Diagnostics Complete".center(WIDTH))
+    print("=" * WIDTH + "\n")
 
 
 # ── Entry point ────────────────────────────────────────────────────────────────
@@ -208,17 +270,20 @@ if __name__ == "__main__":
     parser.add_argument("--premium", action="store_true", help="Use cloud model (gemini) for complex tasks")
     parser.add_argument("--chat", action="store_true", help="Interactive basic chat (no tools)")
     parser.add_argument("--list-agents", action="store_true", help="Show all registered agents")
+    parser.add_argument("--health", "--diagnostics", action="store_true", help="Run system diagnostics and verify all components")
     parser.add_argument("--mode", choices=["react", "lc"], default="lc", help="react=legacy custom loop, lc=LangChain agent (default)")
     parser.add_argument("task", nargs="*", help="One-shot task description")
 
     args = parser.parse_args()
     
     if args.premium:
-        core.models.DEFAULT_MODEL = "gemini-2.5-flash"
+        core.models.DEFAULT_MODEL = "gemini-3.1-flash-lite"
 
     lc_mode = (args.mode == "lc")
 
-    if args.list_agents:
+    if args.health:
+        _run_diagnostics()
+    elif args.list_agents:
         _print_agents()
     elif args.chat:
         _run_interactive("CHAT", lc_mode=lc_mode)

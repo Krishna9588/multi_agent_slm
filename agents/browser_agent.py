@@ -23,6 +23,7 @@ import json
 import time
 import re
 from urllib.parse import urlparse
+from typing import Optional, Any, Dict, List
 
 try:
     from playwright.sync_api import sync_playwright
@@ -49,74 +50,69 @@ class BrowserSession:
             raise ImportError("Playwright is not installed. Run: pip install playwright && playwright install")
         self._p = sync_playwright().start()
         
+        connected = False
         # ── Isolation Route 1: Local Docker Sandbox ──
         try:
-            print("  [Browser] 🐳 Attempting connection to local Docker sandbox (ws://localhost:3000)...")
             self.browser = self._p.chromium.connect_over_cdp("ws://localhost:3000")
             print("  [Browser] ✅ Connected to Docker sandbox.")
+            connected = True
         except Exception:
-            print("  [Browser] ⚠️ Docker sandbox unreachable. Attempting to start it automatically...")
             import subprocess
             try:
                 subprocess.run(
                     ["docker-compose", "up", "-d", "browser-sandbox"], 
                     cwd=os.getcwd(), 
                     check=True, 
-                    capture_output=True
+                    capture_output=True,
+                    timeout=5
                 )
-                print("  [Browser] 🐳 Docker container started. Waiting for WebSocket to boot...")
-                time.sleep(3)
+                time.sleep(2)
                 self.browser = self._p.chromium.connect_over_cdp("ws://localhost:3000")
                 print("  [Browser] ✅ Connected to Docker sandbox.")
-            except Exception as docker_err:
-                print(f"  [Browser] ⚠️ Could not start or connect to Docker sandbox: {docker_err}")
-                
-                # ── Isolation Route 2: E2B Cloud Sandbox Fallback ──
+                connected = True
+            except Exception:
+                pass
+
+        # ── Isolation Route 2: E2B Cloud Sandbox Fallback ──
+        if not connected:
             e2b_api_key = os.getenv("E2B_API_KEY")
-            if not e2b_api_key:
+            if e2b_api_key and e2b_api_key != "your_e2b_api_key_here":
+                try:
+                    from e2b import Sandbox
+                    print("  [Browser] ☁️ Attempting E2B Cloud Sandbox...")
+                    self.sandbox = Sandbox.create()
+                    setup_cmd = (
+                        "sudo apt update && sudo apt install -y python3-pip && "
+                        "pip3 install playwright && playwright install --with-deps chromium"
+                    )
+                    self.sandbox.commands.run(setup_cmd)
+                    py_script = (
+                        "from playwright.sync_api import sync_playwright; "
+                        "import time; "
+                        "p = sync_playwright().start(); "
+                        "server = p.chromium.launch_server(port=9222, host='0.0.0.0'); "
+                        "time.sleep(3600)"
+                    )
+                    self.sandbox.commands.run(f"python3 -c \"{py_script}\"", background=True)
+                    time.sleep(4)
+                    ws_url = f"ws://{self.sandbox.get_host(9222)}"
+                    self.browser = self._p.chromium.connect_over_cdp(ws_url)
+                    print("  [Browser] ✅ Connected to E2B cloud sandbox.")
+                    connected = True
+                except Exception as e2b_err:
+                    print(f"  [Browser] ⚠️ E2B cloud connection failed: {e2b_err}")
+
+        # ── Isolation Route 3: Local Headless Chromium Fallback ──
+        if not connected:
+            try:
+                self.browser = self._p.chromium.launch(headless=True)
+                connected = True
+            except Exception as local_err:
                 raise RuntimeError(
-                    "❌ ISOLATION FAILED: Could not connect to local Docker sandbox (ws://localhost:3000), "
-                    "and E2B_API_KEY is not set in .env for cloud fallback.\n"
-                    "Please either run `docker-compose up -d browser-sandbox` or add E2B_API_KEY to your .env file."
+                    f"Browser launch failed: {local_err}.\n"
+                    "Ensure Playwright browser binaries are installed with: `playwright install chromium`"
                 )
-            
-            print("  [Browser] ☁️ Attempting E2B Cloud Sandbox fallback...")
-            try:
-                from e2b import Sandbox
-            except ImportError:
-                raise ImportError("e2b package is not installed. Please run: pip install e2b>=0.14.0")
-                
-            try:
-                # E2B Sandbox setup
-                self.sandbox = Sandbox.create()
-                print("  [Browser] ☁️ Setting up Playwright in E2B (this takes ~1 min on cold start)...")
-                
-                # Install Python, Playwright, Chromium inside sandbox
-                setup_cmd = (
-                    "sudo apt update && sudo apt install -y python3-pip && "
-                    "pip3 install playwright && playwright install --with-deps chromium"
-                )
-                self.sandbox.commands.run(setup_cmd)
-                
-                # Launch CDP Server bound to 0.0.0.0 so we can access it over the internet
-                print("  [Browser] ☁️ Launching Playwright CDP server...")
-                py_script = (
-                    "from playwright.sync_api import sync_playwright; "
-                    "import time; "
-                    "p = sync_playwright().start(); "
-                    "server = p.chromium.launch_server(port=9222, host='0.0.0.0'); "
-                    "print('Server running...'); "
-                    "time.sleep(3600)"
-                )
-                self.sandbox.commands.run(f"python3 -c \"{py_script}\"", background=True)
-                time.sleep(5)  # Give the server time to start
-                
-                ws_url = f"ws://{self.sandbox.get_host(9222)}"
-                print(f"  [Browser] ☁️ Connecting to E2B CDP at {ws_url}...")
-                self.browser = self._p.chromium.connect_over_cdp(ws_url)
-                print("  [Browser] ✅ Connected to E2B cloud sandbox.")
-            except Exception as e2b_err:
-                raise RuntimeError(f"Isolation failed. Docker unreachable, and E2B fallback failed: {str(e2b_err)}")
+
         self.context = self.browser.new_context(
             viewport={"width": 1280, "height": 900},
             user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -625,3 +621,39 @@ def browser_agent(url: str, task: str, model: str = DEFAULT_MODEL) -> dict:
         return result
     except Exception as e:
         return {"error": f"Browser Autopilot failed: {str(e)}"}
+
+
+# ── Swarm Mode Helper Functions ────────────────────────────────────────────────
+
+_global_browser_session: Optional[BrowserSession] = None
+
+def _get_swarm_browser():
+    global _global_browser_session
+    if _global_browser_session is None:
+        _global_browser_session = BrowserSession()
+    return _global_browser_session
+
+def browser_goto(url: str) -> dict:
+    """Navigates to the specified URL."""
+    b = _get_swarm_browser()
+    return b.navigate(url)
+
+def browser_click(element_id: int) -> dict:
+    """Clicks an element by its numeric ID."""
+    b = _get_swarm_browser()
+    return b.click(element_id)
+
+def browser_type(element_id: int, text: str) -> dict:
+    """Types text into an element by its numeric ID."""
+    b = _get_swarm_browser()
+    return b.type(element_id, text)
+
+def browser_read() -> dict:
+    """Reads the current page accessibility tree and text."""
+    b = _get_swarm_browser()
+    return b.read_accessibility_tree()
+
+def done_browsing(summary: str = "", data: Any = None) -> dict:
+    """Completes the browsing session and returns extracted data."""
+    return {"status": "completed", "summary": summary, "data": data}
+

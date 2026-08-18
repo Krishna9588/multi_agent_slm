@@ -61,10 +61,14 @@ def clean_dataframe(df):
 def finance_agent(ticker: str, data_type: str, period: str = "1mo") -> dict:
     """Fetches comprehensive financial data using yahooquery and yfinance."""
     try:
-        import yfinance as yf
         from yahooquery import Ticker, get_trending
     except ImportError:
-        return {"error": "setup required", "message": "Missing dependencies. Please run: pip install yfinance yahooquery pandas"}
+        return {"error": "setup required", "message": "Missing dependencies. Please run: pip install yahooquery pandas"}
+
+    try:
+        import yfinance as yf
+    except ImportError:
+        yf = None
 
     try:
         # General Market Handling
@@ -77,7 +81,7 @@ def finance_agent(ticker: str, data_type: str, period: str = "1mo") -> dict:
 
         # Ticker Specific Handling
         yq_ticker = Ticker(ticker)
-        yf_ticker = yf.Ticker(ticker)
+        yf_ticker = yf.Ticker(ticker) if yf is not None else None
 
         result_data = None
 
@@ -85,7 +89,6 @@ def finance_agent(ticker: str, data_type: str, period: str = "1mo") -> dict:
             result_data = yq_ticker.summary_profile
         
         elif data_type == "sec_filings":
-            # Returns a DataFrame of all SEC filings
             df = yq_ticker.sec_filings
             result_data = clean_dataframe(df)
             
@@ -93,7 +96,6 @@ def finance_agent(ticker: str, data_type: str, period: str = "1mo") -> dict:
             result_data = yq_ticker.earnings
             
         elif data_type == "analysis":
-            # Analyst recommendations, upgrades/downgrades
             df = yq_ticker.recommendation_trend
             result_data = clean_dataframe(df)
             
@@ -103,8 +105,11 @@ def finance_agent(ticker: str, data_type: str, period: str = "1mo") -> dict:
             
         elif data_type == "options":
             try:
-                # yfinance provides a clean list of expiration dates
-                result_data = {"expiration_dates": list(yf_ticker.options)}
+                if yf_ticker:
+                    result_data = {"expiration_dates": list(yf_ticker.options)}
+                else:
+                    opt = yq_ticker.option_chain
+                    result_data = clean_dataframe(opt) if hasattr(opt, 'empty') else opt
             except Exception as e:
                 result_data = {"error": f"Could not fetch options: {e}"}
             
@@ -113,7 +118,10 @@ def finance_agent(ticker: str, data_type: str, period: str = "1mo") -> dict:
             
         elif data_type == "news":
             try:
-                result_data = yf_ticker.news
+                if yf_ticker and hasattr(yf_ticker, 'news'):
+                    result_data = yf_ticker.news
+                else:
+                    result_data = yq_ticker.news(20)
             except Exception as e:
                 result_data = {"error": f"Could not fetch news: {e}"}
             
@@ -123,10 +131,17 @@ def finance_agent(ticker: str, data_type: str, period: str = "1mo") -> dict:
             
         elif data_type == "history":
             try:
-                df = yf_ticker.history(period=period)
+                df = yq_ticker.history(period=period)
                 result_data = clean_dataframe(df)
             except Exception as e:
-                result_data = {"error": f"Could not fetch history: {e}"}
+                if yf_ticker:
+                    try:
+                        df = yf_ticker.history(period=period)
+                        result_data = clean_dataframe(df)
+                    except Exception as yf_e:
+                        result_data = {"error": f"Could not fetch history: {yf_e}"}
+                else:
+                    result_data = {"error": f"Could not fetch history: {e}"}
             
         else:
             return {"error": f"Invalid data_type: {data_type}."}

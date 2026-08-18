@@ -1,7 +1,9 @@
 import sys
-sys.path.insert(0, '.')
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from core.swarm import run_swarm, Agent, TransferToAgent
+from core.models import DEFAULT_MODEL, SECONDARY_MODEL
 from agents.browser_agent import browser_goto, browser_click, browser_type, browser_read, done_browsing
 
 def transfer_to_browser(**kwargs) -> TransferToAgent:
@@ -9,10 +11,9 @@ def transfer_to_browser(**kwargs) -> TransferToAgent:
     return TransferToAgent(browser_agent)
 
 # Define the Browser Agent
-# Using phi4-mini:3.8b for the browser agent because it's great at tool calling
 browser_agent = Agent(
     name="BrowserAgent",
-    model="llama3.2:3b",
+    model=SECONDARY_MODEL,
     instructions="""You are a Browser Automation Agent.
 You can navigate the web, click elements, and read the page.
 CRITICAL INSTRUCTION: You CANNOT use CSS selectors to click or type. You MUST use the integer `element_id`.
@@ -26,19 +27,26 @@ Always call tools to interact with the web. Do not guess.""",
 )
 
 # Define the Meta Orchestrator
-# Using qwen3:4b (since that's what's in OLLAMA_MODELS in models.py) for the orchestrator
 meta_agent = Agent(
     name="MetaOrchestrator",
-    model="gemma4:e2b-mlx",
+    model=DEFAULT_MODEL,
     instructions="""You are the Meta-Orchestrator.
 Your job is to route tasks. If a user asks to interact with a website or scrape a page dynamically, you MUST call transfer_to_browser.
 Do not attempt to answer it yourself.""",
     functions=[transfer_to_browser]
 )
 
-print("Starting Multi-Agent Swarm Test...")
-difficult_query = "Go to https://news.ycombinator.com (Hacker News), read the titles of the top 3 articles, and then click on the first article's comments link to read what people are saying."
-result = run_swarm(starting_agent=meta_agent, user_query=difficult_query)
-print("\nFinal Result:")
-print(result)
+def test_swarm_agent_initialization():
+    """Verify Swarm agents initialize with correct models and tools."""
+    assert browser_agent.name == "BrowserAgent"
+    assert len(browser_agent.functions) == 5
+    assert meta_agent.name == "MetaOrchestrator"
+    assert len(meta_agent.functions) == 1
+
+if __name__ == "__main__":
+    print("Starting Multi-Agent Swarm Test...")
+    difficult_query = "Go to https://news.ycombinator.com (Hacker News), read the titles of the top 3 articles, and then click on the first article's comments link to read what people are saying."
+    result = run_swarm(starting_agent=meta_agent, user_query=difficult_query)
+    print("\nFinal Result:")
+    print(result)
 

@@ -36,7 +36,7 @@ _MAX_RETRIES = 3
 
 # ── JSON Extraction ────────────────────────────────────────────────────────────
 
-def extract_json(text: str):
+def extract_json(text: str, allow_list: bool = True):
     """
     Robustly parse JSON from a model response.
 
@@ -47,10 +47,17 @@ def extract_json(text: str):
     """
     text = text.strip()
 
+    def _is_valid(val):
+        if isinstance(val, dict):
+            return True
+        if allow_list and isinstance(val, list):
+            return True
+        return False
+
     # 1. Direct parse
     try:
         parsed = json.loads(text)
-        if isinstance(parsed, dict):
+        if _is_valid(parsed):
             return parsed
     except json.JSONDecodeError:
         pass
@@ -60,34 +67,33 @@ def extract_json(text: str):
     if m:
         try:
             parsed = json.loads(m.group(1))
-            if isinstance(parsed, dict):
+            if _is_valid(parsed):
                 return parsed
         except json.JSONDecodeError:
             pass
 
-    # 3. Find the first complete { ... } block (greedy → non-greedy fallback)
-    start = text.find('{')
-    if start != -1:
-        # Try progressively shorter substrings to find valid JSON
-        depth = 0
-        end_positions = []
-        for i in range(start, len(text)):
-            if text[i] == '{':
-                depth += 1
-            elif text[i] == '}':
-                depth -= 1
-                if depth == 0:
-                    end_positions.append(i)
-        
-        # Try each balanced {} block from longest to shortest
-        for end in reversed(end_positions):
-            candidate = text[start:end + 1]
-            try:
-                parsed = json.loads(candidate)
-                if isinstance(parsed, dict):
-                    return parsed
-            except json.JSONDecodeError:
-                continue
+    # 3. Find the first complete { ... } block (or [ ... ] if allow_list)
+    for open_char, close_char in ([('{', '}')] + ([('[', ']')] if allow_list else [])):
+        start = text.find(open_char)
+        if start != -1:
+            depth = 0
+            end_positions = []
+            for i in range(start, len(text)):
+                if text[i] == open_char:
+                    depth += 1
+                elif text[i] == close_char:
+                    depth -= 1
+                    if depth == 0:
+                        end_positions.append(i)
+            
+            for end in reversed(end_positions):
+                candidate = text[start:end + 1]
+                try:
+                    parsed = json.loads(candidate)
+                    if _is_valid(parsed):
+                        return parsed
+                except json.JSONDecodeError:
+                    continue
 
     # Return None instead of raising — callers must check for None
     return None
